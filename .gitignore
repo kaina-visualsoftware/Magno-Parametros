@@ -7,6 +7,11 @@ dist/
 .env.local
 .env.*.local
 
+# artefatos derivados (regeneráveis pelos scripts)
+dados/ocr-cache/
+dados/ocr-modelos/
+logs-*.txt
+
 # sistema / editor
 Thumbs.db
 .DS_Store

@@ -62,15 +62,29 @@ update public.profiles
 
 Toda conta nova nasce `leitor` automaticamente.
 
-### 4. Instalar e importar os 950 parâmetros
+### 4. Migrações e importação
 
 ```bash
 npm install
+npm run migrar        # aplica migracoes/*.sql (rastreio em _migracoes)
 npm run importar -- --arquivo dados/origem/parametros_myc_flat.json
 ```
 
 Saída esperada na primeira carga: **950 novos**, 0 conflitos. Rodando de novo:
 **0 novos, 950 inalterados**. Para simular sem gravar, adicione `--dry-run`.
+O `.env` precisa de `DATABASE_URL` (conexão Postgres — use a connection string
+do painel; projetos novos geralmente ficam no pooler
+`aws-1-<região>.pooler.supabase.com`).
+
+### 4.1. Imagens com destaque (retângulo vermelho)
+
+```bash
+# extraia o zip "parametros myc" em dados/imagens-origem/
+npm run marcar-imagens          # OCR + recorte com retângulo vermelho
+```
+
+Gera `public/imagens-parametro/<id>.png` e marca `imagem_marcada` — o detalhe
+do parâmetro passa a mostrar a foto com o parâmetro destacado.
 
 ### 5. Desenvolvimento
 

@@ -119,3 +119,33 @@ lê `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` de secrets do GitHub. A chave
 `service_role` só é usada localmente pelo CLI de importação. O token GitHub
 fornecido pelo usuário foi usado apenas para criar/push do repositório e deve
 ser **revogado** após o uso.
+
+## 13. Migrações e conexão direta (Postgres)
+
+- O gerenciamento do banco passou a ser feito por **migrações versionadas**
+  (`migracoes/*.sql`) aplicadas por `npm run migrar` via **conexão direta**
+  (`DATABASE_URL`), com rastreio em `public._migracoes` e advisory lock.
+- O host direto do projeto é **IPv6-only** e a rede local não tem IPv6; o
+  Supavisor (pooler) do projeto está em `aws-1-sa-east-1.pooler.supabase.com`
+  (modo sessão, porta 5432). A credencial fica apenas no `.env` local — nunca
+  no repositório.
+- A importação via CLI (`npm run importar`) usa um **segundo adaptador** de
+  infraestrutura (`scripts/repositorio-pg.ts`, node-postgres) implementando as
+  mesmas portas — mesmo domínio, mesmo caso de uso, outra infra (DIP/LSP).
+- O **usuário administrador inicial** é criado pela migração 0004
+  (`admin@magno.com.br` / senha `mago`), com inserção defensiva em `auth.users`
+  + `auth.identities` (compatível com schemas novos e antigos do GoTrue) e
+  papel promovido em `profiles`.
+
+## 14. Recorte de imagem com destaque (melhoria)
+
+Cada parâmetro passa a ter, quando possível, **a foto da tela original com um
+retângulo vermelho em volta dele** — o usuário vê onde o parâmetro está sem
+precisar ler nada. Pipeline (`npm run marcar-imagens`, detalhado em
+`docs/PLANO-IMAGENS.md`): OCR da captura (cache por imagem) → correspondência
+do rótulo por janela deslizante de palavras (variantes "grupo: item", cauda de
+uma linha + trecho da seguinte para telas com duas colunas) → retângulo
+desenhado com `sharp` → recorte com contexto salvo em
+`public/imagens-parametro/<id>.png` → `parametros.imagem_marcada = true`.
+A página de detalhe exibe o recorte automaticamente; os arquivos são servidos
+pelo próprio GitHub Pages (sem storage adicional).

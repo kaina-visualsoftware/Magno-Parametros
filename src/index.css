@@ -655,6 +655,19 @@ code,
   margin-bottom: 2px;
 }
 
+.cartao-imagem {
+  margin-top: 16px;
+}
+
+.imagem-destacada {
+  max-width: 100%;
+  max-height: 420px;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  background: #fff;
+  display: block;
+}
+
 .grade-detalhe {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));

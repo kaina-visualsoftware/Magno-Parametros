@@ -147,6 +147,7 @@ export async function mapearArquivoFlat(conteudo: ConteudoFlat): Promise<Resulta
       ativo: true,
       caminho: caminhoCalculado,
       imagemOrigem: item.imagem_origem ?? null,
+      imagemMarcada: false,
       textoBusca: montarTextoBusca([item.nome, item.descricao, item.grupo, caminhoCalculado]),
     });
   }
