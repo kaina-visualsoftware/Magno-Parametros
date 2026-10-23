@@ -1,0 +1,15 @@
+# dependências e build
+node_modules/
+dist/
+
+# ambiente e segredos
+.env
+.env.local
+.env.*.local
+
+# sistema / editor
+Thumbs.db
+.DS_Store
+*.log
+.vscode/
+.idea/
