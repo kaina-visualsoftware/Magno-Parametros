@@ -6,6 +6,7 @@
  */
 
 import { EventoHistorico, Parametro } from './entidades';
+import { montarTextoBusca } from './normalizador';
 
 export interface ResultadoComparacao {
   /** Novos + alterados, prontos para persistir (campos editáveis preservados). */
@@ -74,7 +75,9 @@ export function compararParametros(
       caminho: entrada.caminho,
       imagemOrigem: entrada.imagemOrigem,
       hashOrigem: entrada.hashOrigem,
-      textoBusca: entrada.textoBusca,
+      textoBusca: montarTextoBusca([
+        entrada.nome, entrada.descricaoOriginal, existente.oQueFaz, entrada.grupo, entrada.caminho,
+      ]),
     };
     paraSalvar.push(mesclado);
 

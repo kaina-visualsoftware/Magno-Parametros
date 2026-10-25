@@ -32,6 +32,8 @@ export interface Aba {
 
 export interface Parametro {
   id: string;
+  /** Versão do banco usada para rejeitar gravações de documentação desatualizadas. */
+  versao: number;
   abaId: string;
   grupo: string;
   nome: string;

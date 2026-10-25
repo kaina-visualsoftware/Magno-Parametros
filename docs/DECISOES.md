@@ -132,10 +132,9 @@ ser **revogado** após o uso.
 - A importação via CLI (`npm run importar`) usa um **segundo adaptador** de
   infraestrutura (`scripts/repositorio-pg.ts`, node-postgres) implementando as
   mesmas portas — mesmo domínio, mesmo caso de uso, outra infra (DIP/LSP).
-- O **usuário administrador inicial** é criado pela migração 0004
-  (`admin@magno.com.br` / senha `mago`), com inserção defensiva em `auth.users`
-  + `auth.identities` (compatível com schemas novos e antigos do GoTrue) e
-  papel promovido em `profiles`.
+- O **usuário administrador inicial** deve ser criado pelo Supabase Auth e
+  promovido explicitamente conforme o README. A migração 0004 ficou reservada
+  como no-op após a remoção do provisionamento com credencial fixa.
 
 ## 14. Recorte de imagem com destaque (melhoria)
 

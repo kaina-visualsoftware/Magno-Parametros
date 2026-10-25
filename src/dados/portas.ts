@@ -53,7 +53,18 @@ export interface ParametroLeitura {
 /** Porta estreita usada exclusivamente pela importação. */
 export interface ParametroImportacao {
   buscarPorIds(ids: string[]): Promise<Parametro[]>;
+  listarIdsImportados(): Promise<string[]>;
   salvarEmLote(parametros: Parametro[]): Promise<void>;
+}
+
+export interface DocumentacaoParametro {
+  id: string;
+  versaoEsperada: number;
+  oQueFaz: string | null;
+  impacto: string | null;
+  valorPadrao: string | null;
+  observacoes: string | null;
+  statusDocumentacao: StatusDocumentacao;
 }
 
 /** Escrita completa (cadastro/edição). */
@@ -134,6 +145,8 @@ export interface RegistradorHistorico {
 // ---------------------------------------------------------------------------
 
 export interface PortasDeDados {
+  /** Atualização parcial, com versão e histórico atômicos no servidor. */
+  documentacao: { salvar(entrada: DocumentacaoParametro): Promise<Parametro> };
   parametroLeitura: ParametroLeitura;
   parametroImportacao: ParametroImportacao;
   parametroEscrita: ParametroEscrita;

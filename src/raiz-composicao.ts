@@ -11,7 +11,12 @@ const urlSupabase = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const chaveAnon = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 export function configuracaoPresente(): boolean {
-  return Boolean(urlSupabase && chaveAnon);
+  if (!urlSupabase?.trim() || !chaveAnon?.trim()) return false;
+  try {
+    return ['https:', 'http:'].includes(new URL(urlSupabase).protocol);
+  } catch {
+    return false;
+  }
 }
 
 let clienteCache: SupabaseClient | null = null;

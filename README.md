@@ -34,7 +34,8 @@ magno-parametros/
 ### 1. Criar o projeto no Supabase
 
 1. Crie um projeto em <https://supabase.com> (plano gratuito serve).
-2. Abra **SQL Editor** e execute o conteúdo completo de `supabase/schema.sql`.
+2. Prefira `npm run migrar` após configurar `DATABASE_URL`. Como alternativa,
+   abra **SQL Editor** e execute o conteúdo completo de `supabase/schema.sql`.
    Ele cria tabelas, índices, políticas RLS e o trigger de perfis.
 3. Em **Project Settings → API**, copie a *Project URL* e a *anon key*.
 
@@ -122,6 +123,13 @@ npm run build      # tsc --noEmit + build de produção
 4. O workflow `.github/workflows/deploy.yml` publica a cada push em `main`.
 
 ## Segurança
+
+- Documentação usa RPC com autorização, versão e auditoria atômica. Editores não
+  podem atualizar diretamente parâmetros nem abas. Upserts administrativos
+  também rejeitam versões desatualizadas.
+- Instalações anteriores: siga `docs/PROXIMOS-PASSOS.md` para rotacionar as
+  credenciais expostas e aplicar a migração 0006 antes de publicar o frontend.
+- Testes locais e integração em banco descartável: `docs/TESTES.md`.
 
 - RLS: `select` público; escrita conforme papel (`profiles.papel`).
 - Nenhum segredo no repositório (`.env` no `.gitignore`; secrets no GitHub).

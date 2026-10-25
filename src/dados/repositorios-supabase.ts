@@ -39,6 +39,7 @@ type Linha = Record<string, unknown>;
 function deLinhaParametro(linha: Linha): Parametro {
   return {
     id: String(linha.id),
+    versao: Number(linha.versao ?? 0),
     abaId: String(linha.aba_id),
     grupo: String(linha.grupo ?? ''),
     nome: String(linha.nome),
@@ -65,6 +66,7 @@ function deLinhaParametro(linha: Linha): Parametro {
 function paraLinhaParametro(p: Parametro): Linha {
   return {
     id: p.id,
+    versao: p.versao,
     aba_id: p.abaId,
     grupo: p.grupo,
     nome: p.nome,
@@ -250,7 +252,21 @@ export function criarRepositoriosSupabase(cliente: SupabaseClient): PortasDeDado
   }
 
   const parametroLeitura: ParametroLeitura = { buscarPorId, listar, listarPorAbas, contagemPorAba };
-  const parametroImportacao: ParametroImportacao = { buscarPorIds, salvarEmLote };
+  const parametroImportacao: ParametroImportacao = {
+    buscarPorIds,
+    salvarEmLote,
+    async listarIdsImportados() {
+      const ids: string[] = [];
+      const tamanho = 500;
+      for (let inicio = 0; ; inicio += tamanho) {
+        const { data, error } = await cliente.from('parametros').select('id')
+          .eq('origem', 'importado').order('id').range(inicio, inicio + tamanho - 1);
+        if (error) throw error;
+        ids.push(...(data ?? []).map((linha) => String(linha.id)));
+        if (!data || data.length < tamanho) return ids;
+      }
+    },
+  };
   const parametroEscrita: ParametroEscrita = { ...parametroImportacao, salvar, desativar };
 
   // ---------------- Árvore ----------------
@@ -472,6 +488,22 @@ export function criarRepositoriosSupabase(cliente: SupabaseClient): PortasDeDado
   };
 
   return {
+    documentacao: {
+      async salvar(entrada) {
+        const { data, error } = await cliente.rpc('salvar_documentacao', {
+          p_id: entrada.id,
+          p_versao_esperada: entrada.versaoEsperada,
+          p_o_que_faz: entrada.oQueFaz,
+          p_impacto: entrada.impacto,
+          p_valor_padrao: entrada.valorPadrao,
+          p_observacoes: entrada.observacoes,
+          p_status: entrada.statusDocumentacao,
+        });
+        if (error) throw new Error(error.message);
+        if (!data) throw new Error('O servidor não retornou a documentação salva.');
+        return deLinhaParametro(data);
+      },
+    },
     parametroLeitura,
     parametroImportacao,
     parametroEscrita,

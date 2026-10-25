@@ -20,6 +20,7 @@ export function criarRepositoriosPg(pool: Pool): PortasImportacao {
   function deLinhaParametro(linha: Linha): Parametro {
     return {
       id: String(linha.id),
+      versao: Number(linha.versao ?? 0),
       abaId: String(linha.aba_id),
       grupo: String(linha.grupo ?? ''),
       nome: String(linha.nome),
@@ -124,6 +125,10 @@ export function criarRepositoriosPg(pool: Pool): PortasImportacao {
   };
 
   const parametroImportacao = {
+    async listarIdsImportados(): Promise<string[]> {
+      const { rows } = await pool.query("select id from parametros where origem = 'importado' order by id");
+      return rows.map((linha) => String(linha.id));
+    },
     async buscarPorIds(ids: string[]): Promise<Parametro[]> {
       if (ids.length === 0) return [];
       const saida: Parametro[] = [];
@@ -135,7 +140,7 @@ export function criarRepositoriosPg(pool: Pool): PortasImportacao {
     },
 
     async salvarEmLote(parametros: Parametro[]): Promise<void> {
-      const COLUNAS = 21;
+      const COLUNAS = 22;
       for (const bloco of emBlocos(parametros, 100)) {
         const valores: unknown[] = [];
         const linhasSql = bloco.map((p, indice) => {
@@ -144,7 +149,7 @@ export function criarRepositoriosPg(pool: Pool): PortasImportacao {
             p.id, p.abaId, p.grupo, p.nome, p.tipo, p.opcoes, p.descricaoOriginal,
             p.oQueFaz, p.impacto, p.valorPadrao, p.observacoes, p.statusDocumentacao,
             p.origem, p.hashOrigem, p.editadoNaOrigem, p.ordem, p.ativo, p.caminho,
-            p.imagemOrigem, p.imagemMarcada, p.textoBusca,
+            p.imagemOrigem, p.imagemMarcada, p.textoBusca, p.versao,
           );
           const marcadores = Array.from({ length: COLUNAS }, (_, j) => `$${base + j + 1}`);
           return `(${marcadores.join(', ')})`;
@@ -154,7 +159,7 @@ export function criarRepositoriosPg(pool: Pool): PortasImportacao {
           `insert into parametros (id, aba_id, grupo, nome, tipo, opcoes, descricao_original,
              o_que_faz, impacto, valor_padrao, observacoes, status_documentacao, origem,
              hash_origem, editado_na_origem, ordem, ativo, caminho, imagem_origem,
-             imagem_marcada, texto_busca)
+             imagem_marcada, texto_busca, versao)
            values ${linhasSql.join(', ')}
            on conflict (id) do update set
              aba_id = excluded.aba_id, grupo = excluded.grupo, nome = excluded.nome,
@@ -166,7 +171,7 @@ export function criarRepositoriosPg(pool: Pool): PortasImportacao {
              editado_na_origem = excluded.editado_na_origem, ordem = excluded.ordem,
              ativo = excluded.ativo, caminho = excluded.caminho,
              imagem_origem = excluded.imagem_origem, imagem_marcada = excluded.imagem_marcada,
-             texto_busca = excluded.texto_busca`,
+             texto_busca = excluded.texto_busca, versao = excluded.versao`,
           valores,
         );
       }

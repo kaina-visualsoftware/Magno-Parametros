@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { Migalhas } from '../componentes/Migalhas';
@@ -15,7 +15,7 @@ import {
   podeEditarDocumentacao,
   useAutenticacao,
 } from '../aplicacao/autenticacao';
-import { StatusDocumentacao } from '../dominio/entidades';
+import { Parametro, StatusDocumentacao } from '../dominio/entidades';
 
 export default function PaginaParametro() {
   const { id } = useParams<{ id: string }>();
@@ -39,34 +39,46 @@ export default function PaginaParametro() {
   const [mensagem, setMensagem] = useState('');
   const [erro, setErro] = useState('');
   const [falhaImagem, setFalhaImagem] = useState(false);
+  const [versaoEsperada, setVersaoEsperada] = useState(0);
+  const rascunho = useRef({ id, alterado: false });
+
+  function carregarFormulario(parametro: Parametro) {
+    setOQueFaz(parametro.oQueFaz ?? '');
+    setImpacto(parametro.impacto ?? '');
+    setValorPadrao(parametro.valorPadrao ?? '');
+    setObservacoes(parametro.observacoes ?? '');
+    setStatusDoc(parametro.statusDocumentacao);
+    setVersaoEsperada(parametro.versao);
+    rascunho.current = { id: parametro.id, alterado: false };
+  }
 
   useEffect(() => {
     setFalhaImagem(false);
+    setMensagem('');
+    setErro('');
   }, [id]);
 
   useEffect(() => {
     const detalhe = consultaDetalhe.data;
-    if (detalhe) {
-      setOQueFaz(detalhe.parametro.oQueFaz ?? '');
-      setImpacto(detalhe.parametro.impacto ?? '');
-      setValorPadrao(detalhe.parametro.valorPadrao ?? '');
-      setObservacoes(detalhe.parametro.observacoes ?? '');
-      setStatusDoc(detalhe.parametro.statusDocumentacao);
+    if (detalhe && (rascunho.current.id !== id || !rascunho.current.alterado)) {
+      carregarFormulario(detalhe.parametro);
     }
-  }, [consultaDetalhe.data]);
+  }, [consultaDetalhe.data, id]);
 
   const salvar = useMutation({
     mutationFn: () =>
       salvarDocumentacao({
         id: id as string,
+        versaoEsperada,
         oQueFaz: oQueFaz || null,
         impacto: impacto || null,
         valorPadrao: valorPadrao || null,
         observacoes: observacoes || null,
         statusDocumentacao: statusDoc,
-        usuario: usuario?.email ?? null,
       }),
-    onSuccess: async () => {
+    onSuccess: async (parametro) => {
+      if (rascunho.current.id !== parametro.id) return;
+      carregarFormulario(parametro);
       setMensagem('Documentação salva.');
       setErro('');
       await consulta.invalidateQueries({ queryKey: ['parametro', id] });
@@ -126,7 +138,7 @@ export default function PaginaParametro() {
         </div>
       </header>
 
-      {erro && <p className="erro">{erro}</p>}
+      {erro && <p className="erro" role="alert">{erro}</p>}
 
       {parametro.imagemMarcada && !falhaImagem && (
         <section className="cartao cartao-imagem">
@@ -197,10 +209,13 @@ export default function PaginaParametro() {
 
         <section className="cartao">
           <h2>Documentação</h2>
+          <fieldset disabled={!podeEditar || salvar.isPending} style={{ border: 0, padding: 0, margin: 0 }}
+            onChange={() => { rascunho.current.alterado = true; setMensagem(''); }}>
           <label className="campo">
             <span>O que faz</span>
             <textarea
               rows={4}
+              maxLength={20000}
               value={oQueFaz}
               onChange={(evento) => setOQueFaz(evento.target.value)}
               disabled={!podeEditar}
@@ -211,6 +226,7 @@ export default function PaginaParametro() {
             <span>Impacto</span>
             <textarea
               rows={3}
+              maxLength={20000}
               value={impacto}
               onChange={(evento) => setImpacto(evento.target.value)}
               disabled={!podeEditar}
@@ -221,6 +237,7 @@ export default function PaginaParametro() {
             <span>Valor padrão</span>
             <input
               type="text"
+              maxLength={20000}
               value={valorPadrao}
               onChange={(evento) => setValorPadrao(evento.target.value)}
               disabled={!podeEditar}
@@ -230,6 +247,7 @@ export default function PaginaParametro() {
             <span>Observações</span>
             <textarea
               rows={3}
+              maxLength={20000}
               value={observacoes}
               onChange={(evento) => setObservacoes(evento.target.value)}
               disabled={!podeEditar}
@@ -247,22 +265,36 @@ export default function PaginaParametro() {
               <option value="revisado">revisado</option>
             </select>
           </label>
+          </fieldset>
           {podeEditar ? (
-            <button
+            <><button
               type="button"
               className="botao primario"
               disabled={salvar.isPending}
               onClick={() => salvar.mutate()}
             >
-              Salvar documentação
+              {salvar.isPending ? 'Salvando…' : 'Salvar documentação'}
             </button>
+            <button type="button" className="botao fantasma"
+              disabled={salvar.isPending || consultaDetalhe.isFetching}
+              onClick={async () => {
+                if (rascunho.current.alterado && !window.confirm('Descartar seu rascunho e carregar a versão atual?')) return;
+                const resultado = await consultaDetalhe.refetch();
+                if (resultado.error) {
+                  setErro('Não foi possível recarregar. Seu rascunho foi preservado.');
+                } else if (resultado.data) {
+                  carregarFormulario(resultado.data.parametro);
+                  setErro('');
+                  setMensagem('Versão atual carregada.');
+                }
+              }}>Recarregar documentação</button></>
           ) : (
             <p className="dica">
               Somente <strong>editores</strong> e <strong>administradores</strong> editam a
               documentação. <Link to="/entrar">Entrar</Link>
             </p>
           )}
-          {mensagem && <p className="mensagem-sucesso">{mensagem}</p>}
+          {mensagem && <p className="mensagem-sucesso" role="status">{mensagem}</p>}
         </section>
 
         <section className="cartao">

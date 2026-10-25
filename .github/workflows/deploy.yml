@@ -24,6 +24,13 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - name: Validar configuração pública
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          test -n "$VITE_SUPABASE_URL" || { echo "::error::Defina VITE_SUPABASE_URL nos secrets."; exit 1; }
+          test -n "$VITE_SUPABASE_ANON_KEY" || { echo "::error::Defina VITE_SUPABASE_ANON_KEY nos secrets."; exit 1; }
       - name: Testes unitários do domínio
         run: npm test
       - name: Build de produção

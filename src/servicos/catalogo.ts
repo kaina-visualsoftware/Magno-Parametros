@@ -9,7 +9,7 @@ import { calcularCaminhoAba, calcularCaminhoParametro } from '../dominio/calcula
 import { calcularHashOrigem } from '../dominio/calculadora-hash';
 import { criarSlug, montarTextoBusca } from '../dominio/normalizador';
 import { manipuladorDoTipo } from '../dominio/tipos-parametro';
-import { FiltrosParametros } from '../dados/portas';
+import { DocumentacaoParametro, FiltrosParametros } from '../dados/portas';
 import { ConteudoFlat } from '../dominio/mapeador-arquivo';
 import { FonteJsonPlano, importarCatalogo, RelatorioImportacao } from '../aplicacao/caso-uso-importar';
 import { LinhaHistorico } from '../dominio/entidades';
@@ -140,58 +140,8 @@ export async function detalharParametro(id: string): Promise<DetalheParametro | 
 }
 
 /** Salva somente os campos editáveis por pessoas; registra histórico das diferenças. */
-export async function salvarDocumentacao(entrada: {
-  id: string;
-  oQueFaz: string | null;
-  impacto: string | null;
-  valorPadrao: string | null;
-  observacoes: string | null;
-  statusDocumentacao: Parametro['statusDocumentacao'];
-  usuario: string | null;
-}): Promise<Parametro> {
-  const antes = await r().parametroLeitura.buscarPorId(entrada.id);
-  if (!antes) throw new Error('Parâmetro não encontrado');
-
-  const depois: Parametro = {
-    ...antes,
-    oQueFaz: entrada.oQueFaz,
-    impacto: entrada.impacto,
-    valorPadrao: entrada.valorPadrao,
-    observacoes: entrada.observacoes,
-    statusDocumentacao: entrada.statusDocumentacao,
-  };
-  depois.textoBusca = montarTextoBusca([
-    depois.nome,
-    depois.descricaoOriginal,
-    depois.oQueFaz,
-    depois.grupo,
-    depois.caminho,
-  ]);
-  await r().parametroEscrita.salvar(depois);
-
-  const eventos: EventoHistorico[] = [];
-  const campos: Array<[keyof Parametro, string]> = [
-    ['oQueFaz', 'oQueFaz'],
-    ['impacto', 'impacto'],
-    ['valorPadrao', 'valorPadrao'],
-    ['observacoes', 'observacoes'],
-    ['statusDocumentacao', 'statusDocumentacao'],
-  ];
-  for (const [campo, rotulo] of campos) {
-    if ((antes[campo] ?? null) !== (depois[campo] ?? null)) {
-      eventos.push({
-        entidade: 'parametro',
-        entidadeId: depois.id,
-        campo: rotulo,
-        valorAnterior: String(antes[campo] ?? ''),
-        valorNovo: String(depois[campo] ?? ''),
-        usuario: entrada.usuario,
-        origem: 'edicao',
-      });
-    }
-  }
-  if (eventos.length > 0) await r().historico.registrar(eventos);
-  return depois;
+export async function salvarDocumentacao(entrada: DocumentacaoParametro): Promise<Parametro> {
+  return r().documentacao.salvar(entrada);
 }
 
 /**
@@ -275,6 +225,7 @@ export async function criarParametro(entrada: {
 
   const parametro: Parametro = {
     id,
+    versao: 0,
     abaId: entrada.abaId,
     grupo: entrada.grupo,
     nome: entrada.nome,
@@ -369,7 +320,7 @@ export async function renomearAba(entrada: { abaId: string; novoNome: string; us
     }
   }
 
-  percorrer(aba, []);
+  percorrer(aba, trilhaNomes.slice(0, -1));
 
   await r().arvoreEscrita.salvarAbas(abasAtualizadas);
 

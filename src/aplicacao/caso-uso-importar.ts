@@ -99,9 +99,8 @@ export async function importarCatalogo(
 
   // Alerta: itens importados que não vieram no arquivo novo (nunca são apagados).
   const idsDaOrigem = new Set(mapeado.parametros.map((p) => p.id));
-  const naoEncontradosNaOrigem = existentes
-    .filter((p) => p.origem === 'importado' && !idsDaOrigem.has(p.id))
-    .map((p) => p.id);
+  const naoEncontradosNaOrigem = (await portas.parametroImportacao.listarIdsImportados())
+    .filter((id) => !idsDaOrigem.has(id));
 
   if (!opcoes.dryRun) {
     if (tiposNovos.length > 0) {

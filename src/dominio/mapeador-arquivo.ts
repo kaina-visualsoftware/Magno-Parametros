@@ -129,6 +129,7 @@ export async function mapearArquivoFlat(conteudo: ConteudoFlat): Promise<Resulta
 
     parametros.push({
       id: item.id,
+      versao: 0,
       abaId,
       grupo: item.grupo,
       nome: item.nome,

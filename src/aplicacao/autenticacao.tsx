@@ -7,7 +7,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { Papel } from '../dominio/entidades';
-import { obterClienteSupabase } from '../raiz-composicao';
+import { configuracaoPresente, obterClienteSupabase } from '../raiz-composicao';
 
 interface EstadoAutenticacao {
   carregando: boolean;
@@ -25,18 +25,38 @@ export function ProvedorAutenticacao({ children }: { children: ReactNode }) {
   const [papel, setPapel] = useState<Papel | null>(null);
 
   useEffect(() => {
+    if (!configuracaoPresente()) {
+      setCarregando(false);
+      return;
+    }
+    let ativo = true;
     const cliente = obterClienteSupabase();
-    cliente.auth.getSession().then(({ data }) => {
+    cliente.auth.getSession().then(({ data, error }) => {
+      if (!ativo) return;
+      if (error) {
+        setUsuario(null);
+        setCarregando(false);
+        return;
+      }
       setUsuario(data.session?.user ?? null);
       setCarregando(false);
+    }).catch(() => {
+      if (ativo) setCarregando(false);
     });
     const { data: assinatura } = cliente.auth.onAuthStateChange((_evento, sessao) => {
+      setPapel(null);
       setUsuario(sessao?.user ?? null);
+      setCarregando(false);
     });
-    return () => assinatura.subscription.unsubscribe();
+    return () => {
+      ativo = false;
+      assinatura.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
+    let ativo = true;
+    setPapel(null);
     if (!usuario) {
       setPapel(null);
       return;
@@ -46,7 +66,10 @@ export function ProvedorAutenticacao({ children }: { children: ReactNode }) {
       .select('papel')
       .eq('id', usuario.id)
       .maybeSingle()
-      .then(({ data }) => setPapel((data?.papel as Papel | undefined) ?? 'leitor'));
+      .then(({ data, error }) => {
+        if (ativo) setPapel(error ? null : (data?.papel as Papel | undefined) ?? 'leitor');
+      });
+    return () => { ativo = false; };
   }, [usuario]);
 
   async function entrar(email: string, senha: string): Promise<void> {
@@ -55,7 +78,8 @@ export function ProvedorAutenticacao({ children }: { children: ReactNode }) {
   }
 
   async function sair(): Promise<void> {
-    await obterClienteSupabase().auth.signOut();
+    const { error } = await obterClienteSupabase().auth.signOut();
+    if (error) throw error;
   }
 
   const valor: EstadoAutenticacao = { carregando, usuario, papel, entrar, sair };

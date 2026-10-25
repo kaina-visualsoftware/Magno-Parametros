@@ -43,6 +43,7 @@ describe('Comparador de importação (idempotência)', () => {
   function parametroDeTeste(hash: string, id = 'id-teste'): Parametro {
     return {
       id,
+      versao: 0,
       abaId: 'aba',
       grupo: 'Geral',
       nome: 'Parâmetro Teste',
@@ -86,6 +87,13 @@ describe('Comparador de importação (idempotência)', () => {
     const resultado = compararParametros([parametroDeTeste('hash-x')], new Map());
     expect(resultado.novos).toBe(1);
     expect(resultado.paraSalvar[0].statusDocumentacao).toBe('pendente');
+  });
+
+  it('atualização de origem preserva documentação, versão e texto de busca documental', () => {
+    const anterior = { ...parametroDeTeste('antigo'), oQueFaz: 'Ação no orçamento', versao: 4 };
+    const resultado = compararParametros([parametroDeTeste('novo')], new Map([[anterior.id, anterior]]));
+    expect(resultado.paraSalvar[0]).toMatchObject({ oQueFaz: 'Ação no orçamento', versao: 4 });
+    expect(resultado.paraSalvar[0].textoBusca).toContain('acao no orcamento');
   });
 });
 

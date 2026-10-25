@@ -1,63 +1,66 @@
-# Próximos passos (o que falta para o site funcionar 100%)
+# Próximos passos
 
-## ✅ Já pronto (feito e no ar)
+## Segurança operacional — antes de usar o ambiente existente
 
-- Banco no Supabase: 5 migrações aplicadas (tabelas, índices, RLS, perfis).
-- Usuário admin criado: **admin@magno.com.br / senha `mago`** (papel administrador).
-- **950 parâmetros** importados (idempotente: 2ª rodada = 0 novos, 950 inalterados).
-- **855 de 950 parâmetros (90%)** com recorte da tela original + retângulo
-  vermelho em `public/imagens-parametro/<id>.png` (95 ficaram para revisão —
-  ver relatório em `docs/PLANO-IMAGENS.md`).
-- Interface exibe o recorte no detalhe do parâmetro ("Localização na tela de origem").
+A versão anterior publicou uma credencial administrativa fixa e registrou
+exposição de token GitHub e senha do Postgres. Considere essas credenciais
+comprometidas. Não reutilize nem reproduza os valores.
 
-## 🔴 FALTA 1 — chave pública do Supabase (bloqueia o site)
+1. Troque a senha administrativa no Supabase Auth e encerre as sessões existentes.
+2. Revogue o token GitHub exposto e rotacione a senha do Postgres.
+3. Atualize as credenciais locais fora do repositório.
+4. Revise usuários, papéis e alterações feitas durante o período de exposição.
 
-O site no GitHub Pages precisa das chaves públicas para ler o catálogo.
-Sem elas ele mostra a tela "Falta configurar a conexão".
+Remover os valores dos arquivos não os remove do histórico Git e não os revoga.
+A migração 0004 agora é um no-op: instalações novas exigem criação do usuário
+pelo Auth e promoção explícita conforme o README. Instalações existentes não
+têm suas contas alteradas automaticamente.
 
-1. Supabase → seu projeto → **Project Settings → API Keys**.
-2. Copie a chave **anon / publishable** (é pública, pode commitar como secret).
-3. No GitHub: repositório **Magno-Parametros → Settings → Secrets and variables
-   → Actions → New repository secret**, crie as duas:
-   - `VITE_SUPABASE_URL` = `https://dmgmalzqywrjecvzbkjy.supabase.co`
-   - `VITE_SUPABASE_ANON_KEY` = a chave copiada
-4. **Actions → "Publicar no GitHub Pages" → Run workflow** (ou faça qualquer
-   push para reexecutar).
-5. Local (opcional): preencha `VITE_SUPABASE_ANON_KEY` no `.env`.
+## Aplicação da correção
 
-## 🟡 Falta 2 — conferir o login admin
+1. Faça backup e valide a migração 0006 em um projeto Supabase separado.
+2. Aplique `npm run migrar` no ambiente autorizado antes de publicar o frontend.
+3. Configure `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` nos secrets do GitHub.
+   Nunca use uma chave `service_role` em variável `VITE_`.
+4. Publique o frontend e recarregue clientes antigos. Editores passam a salvar
+   documentação exclusivamente pela RPC `salvar_documentacao`.
+5. Confira leitura pública, login, documentação por editor, impedimento de
+   alterações de origem por editor e operações administrativas.
 
-1. Abra o site → **Entrar** → `admin@magno.com.br` / `mago`.
-2. O badge no topo deve mostrar **administrador** (aí aparecem Importar,
-   Novo parâmetro, renomear aba, mesclar tags).
+A migração adiciona `parametros.versao`, restringe UPDATE direto a administradores
+e torna documentação e seu histórico uma transação. A versão carregada é
+comparada no banco; conflitos preservam o rascunho na interface. Importação e
+upserts administrativos também enviam a versão lida, rejeitando snapshots antigos.
 
-## 🟡 Falta 3 — rotacionar segredos expostos no chat
+### Recuperação
 
-- **Token do GitHub** `github_pat_11CAR…` — revogue em
-  <https://github.com/settings/tokens> (não é mais necessário).
-- **Senha do Postgres** (conexão direta) — troque em
-  Supabase → **Database → Roles/Reset database password** e atualize o
-  `DATABASE_URL` no `.env` local.
+Não reverta políticas para a versão permissiva. Se o frontend novo falhar,
+mantenha as restrições de escrita e use o catálogo em leitura enquanto corrige.
+A coluna e a RPC são aditivas; mantenha-as até resolver clientes antigos.
+Não remova dados ou restaure backup sem avaliar alterações posteriores.
 
-## 🟢 Melhorias futuras (fase 2)
+## Estado histórico — não verificado novamente em produção
 
-1. **95 recortes pendentes**: melhorar casamento do OCR (rótulos truncados/
-   compostos) ou marcar manualmente — rodar de novo com `--recarregar` depois
-   de ajustar `scripts/marcar-imagens.ts`.
-2. Sugestão automática de tags (a partir do caminho/grupo) com aprovação em lote.
-3. Aplicar/remover tags em lote na listagem.
-4. Exportação do catálogo completo no formato hierárquico de entrada.
-5. Fila de documentação dedicada + gráficos de progresso.
-6. Testes E2E (Playwright) e repositórios em memória para a suíte de contrato.
-7. Senha do admin: trocar `mago` por algo forte em Authentication → Users.
+O último registro da v1 informa 950 parâmetros importados, cinco migrações
+aplicadas e 855 imagens destacadas. Restam 95 recortes para revisão.
+As configurações e contagens atuais precisam de conferência no ambiente autorizado.
 
-## Comandos úteis
+## Próximas entregas
+
+1. Revisar os 95 recortes pendentes e os casos ambíguos de OCR.
+2. Sugestão e aplicação/remoção de tags em lote.
+3. Exportação hierárquica do catálogo completo.
+4. Fila de documentação e gráficos de progresso.
+5. Ampliar E2E e integração com Supabase Auth/PostgREST reais em staging.
+
+## Verificações locais
 
 ```bash
-npm run migrar            # aplica novas migrações
-npm run importar          # reimporta (idempotente)
-npm run marcar-imagens    # gera recortes pendentes
-npm run verificar-banco   # estado do banco
-npm test                  # testes do domínio
-npm run dev               # desenvolvimento local
+npm ci
+npm test
+npm run build
 ```
+
+Os testes de banco usam somente um Postgres descartável local; veja
+`docs/TESTES.md`. Nenhum comando de migração, importação ou OCR deve apontar
+para produção sem autorização.

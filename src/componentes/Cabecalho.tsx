@@ -6,6 +6,20 @@ export function Cabecalho() {
   const navegar = useNavigate();
   const { usuario, papel, sair } = useAutenticacao();
   const [termo, setTermo] = useState('');
+  const [saindo, setSaindo] = useState(false);
+  const [erroSessao, setErroSessao] = useState('');
+
+  async function encerrarSessao() {
+    setSaindo(true);
+    setErroSessao('');
+    try {
+      await sair();
+    } catch {
+      setErroSessao('Não foi possível sair. Tente novamente.');
+    } finally {
+      setSaindo(false);
+    }
+  }
 
   function submeterBusca(evento: React.FormEvent) {
     evento.preventDefault();
@@ -47,8 +61,8 @@ export function Cabecalho() {
             <span className="email-usuario" title={usuario.email ?? ''}>
               {usuario.email}
             </span>
-            <button type="button" className="botao fantasma" onClick={() => void sair()}>
-              Sair
+            <button type="button" className="botao fantasma" disabled={saindo} onClick={() => void encerrarSessao()}>
+              {saindo ? 'Saindo…' : 'Sair'}
             </button>
           </>
         ) : (
@@ -57,6 +71,7 @@ export function Cabecalho() {
           </Link>
         )}
       </div>
+      {erroSessao && <p className="erro" role="alert">{erroSessao}</p>}
     </header>
   );
 }
