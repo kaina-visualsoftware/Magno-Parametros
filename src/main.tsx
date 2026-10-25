@@ -10,7 +10,12 @@ import './index.css';
 
 const clienteConsulta = new QueryClient({
   defaultOptions: {
-    queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 30_000 },
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 60_000,
+      gcTime: 30 * 60_000,
+    },
   },
 });
 

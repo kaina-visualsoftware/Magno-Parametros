@@ -9,13 +9,20 @@ import { calcularCaminhoAba, calcularCaminhoParametro } from '../dominio/calcula
 import { calcularHashOrigem } from '../dominio/calculadora-hash';
 import { criarSlug, montarTextoBusca } from '../dominio/normalizador';
 import { manipuladorDoTipo } from '../dominio/tipos-parametro';
-import { DocumentacaoParametro, FiltrosParametros } from '../dados/portas';
+import { DocumentacaoParametro } from '../dados/portas';
 import { ConteudoFlat } from '../dominio/mapeador-arquivo';
 import { FonteJsonPlano, importarCatalogo, RelatorioImportacao } from '../aplicacao/caso-uso-importar';
-import { LinhaHistorico } from '../dominio/entidades';
 import { obterRepositorios } from '../raiz-composicao';
+import type { CursorCatalogo, FiltrosCatalogo } from '../dominio/catalogo';
 
 const r = () => obterRepositorios();
+
+export const listarCatalogo = (filtros: FiltrosCatalogo, cursor: CursorCatalogo | null, signal?: AbortSignal) =>
+  r().catalogoCursor.listar(filtros, cursor, signal);
+export const obterParametro = (id: string) => r().parametroLeitura.buscarPorId(id);
+export const obterTagsParametro = (id: string) => r().tagLeitura.listarVinculadas(id);
+export const obterHistoricoParametro = (id: string) => r().historico.listar('parametro', id);
+export const obterTag = (slug: string) => r().tagLeitura.buscarPorSlug(slug);
 
 // ---------------------------------------------------------------------------
 // Árvore e navegação
@@ -28,7 +35,7 @@ export interface NoArvore {
   contagemTotal: number;
 }
 
-export async function obterArvore(): Promise<{ telas: Tela[]; raizes: Record<string, NoArvore[]> }> {
+export async function obterArvore(): Promise<{ telas: Tela[]; abas: Aba[]; raizes: Record<string, NoArvore[]> }> {
   const [telas, abas, contagens] = await Promise.all([
     r().arvoreLeitura.listarTelas(),
     r().arvoreLeitura.listarAbas(),
@@ -54,7 +61,7 @@ export async function obterArvore(): Promise<{ telas: Tela[]; raizes: Record<str
   for (const tela of telas) {
     raizes[tela.id] = (filhosPorPai.get(`tela:${tela.id}`) ?? []).map(montarNo);
   }
-  return { telas, raizes };
+  return { telas, abas, raizes };
 }
 
 export function idsDeSubarvore(abas: Aba[], abaId: string): string[] {
@@ -108,36 +115,8 @@ export async function obterTrilhaDaAba(abaId: string): Promise<TrilhaAba> {
 }
 
 // ---------------------------------------------------------------------------
-// Listagem / busca
-// ---------------------------------------------------------------------------
-
-export async function buscarParametros(filtros: FiltrosParametros) {
-  return r().parametroLeitura.listar(filtros);
-}
-
-// ---------------------------------------------------------------------------
 // Detalhe e documentação
 // ---------------------------------------------------------------------------
-
-export interface DetalheParametro {
-  parametro: Parametro;
-  tags: Tag[];
-  todasTags: Tag[];
-  historico: LinhaHistorico[];
-}
-
-export async function detalharParametro(id: string): Promise<DetalheParametro | null> {
-  const parametro = await r().parametroLeitura.buscarPorId(id);
-  if (!parametro) return null;
-  const [vinculos, todasTags, historico] = await Promise.all([
-    r().tagVinculo.listarPorParametro(id),
-    r().tagLeitura.listar(),
-    r().historico.listar('parametro', id),
-  ]);
-  const mapaTags = new Map(todasTags.map((tag) => [tag.id, tag]));
-  const tags = vinculos.map((vinculo) => mapaTags.get(vinculo.tagId)).filter((tag): tag is Tag => Boolean(tag));
-  return { parametro, tags, todasTags, historico };
-}
 
 /** Salva somente os campos editáveis por pessoas; registra histórico das diferenças. */
 export async function salvarDocumentacao(entrada: DocumentacaoParametro): Promise<Parametro> {
@@ -369,15 +348,7 @@ export interface TagComContagem extends Tag {
 }
 
 export async function listarTags(): Promise<TagComContagem[]> {
-  const [tags, vinculos] = await Promise.all([
-    r().tagLeitura.listar(),
-    r().tagVinculo.listarTodos(),
-  ]);
-  const contagens = new Map<string, number>();
-  for (const vinculo of vinculos) {
-    contagens.set(vinculo.tagId, (contagens.get(vinculo.tagId) ?? 0) + 1);
-  }
-  return tags.map((tag) => ({ ...tag, totalVinculos: contagens.get(tag.id) ?? 0 }));
+  return r().tagLeitura.listarComContagem();
 }
 
 export async function criarTag(nome: string, cor: string | null = null): Promise<Tag> {
@@ -390,6 +361,9 @@ export async function renomearTag(id: string, nome: string): Promise<void> {
 
 /** Mescla a tag de origem na de destino: move todos os vínculos e registra histórico. */
 export async function mesclarTags(tagOrigemId: string, tagDestinoId: string, usuario: string | null): Promise<void> {
+  if (tagOrigemId === tagDestinoId) {
+    throw new Error('Escolha tags diferentes para mesclar.');
+  }
   await r().tagVinculo.substituirVinculos(tagOrigemId, tagDestinoId);
   await r().tagEscrita.excluir(tagOrigemId);
   await r().historico.registrar([
@@ -413,44 +387,8 @@ export async function removerTag(parametroId: string, tagId: string): Promise<vo
   await r().tagVinculo.remover(parametroId, tagId);
 }
 
-export async function parametrosDaTag(
-  slug: string,
-): Promise<{ tag: Tag; parametros: Parametro[] } | null> {
-  const tag = await r().tagLeitura.buscarPorSlug(slug);
-  if (!tag) return null;
-  const vinculos = await r().tagVinculo.listarPorTag(tag.id);
-  const parametros = await r().parametroImportacao.buscarPorIds(vinculos.map((vinculo) => vinculo.parametroId));
-  parametros.sort((a, b) => a.caminho.localeCompare(b.caminho, 'pt-BR'));
-  return { tag, parametros };
-}
-
-// ---------------------------------------------------------------------------
-// Exportação (página da tag)
-// ---------------------------------------------------------------------------
-
-function escaparCsv(valor: string): string {
-  return `"${valor.replace(/"/g, '""')}"`;
-}
-
-export function exportarCsv(parametros: Parametro[]): string {
-  const colunas = ['id', 'nome', 'tipo', 'grupo', 'caminho', 'statusDocumentacao', 'oQueFaz'];
-  const linhas = [colunas.join(';')];
-  for (const p of parametros) {
-    linhas.push(
-      [p.id, p.nome, p.tipo, p.grupo, p.caminho, p.statusDocumentacao, p.oQueFaz ?? '']
-        .map((valor) => escaparCsv(String(valor)))
-        .join(';'),
-    );
-  }
-  return linhas.join('\n');
-}
-
-export function exportarJson(parametros: Parametro[]): string {
-  return JSON.stringify(parametros, null, 2);
-}
-
 export function baixarArquivo(nome: string, conteudo: string, tipoMime: string): void {
-  const blob = new Blob([`\ufeff${conteudo}`], { type: tipoMime });
+  const blob = new Blob([conteudo], { type: tipoMime });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;

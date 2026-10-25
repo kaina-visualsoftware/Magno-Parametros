@@ -8,44 +8,21 @@ import {
   Aba,
   EventoHistorico,
   LinhaHistorico,
-  OrigemItem,
   Parametro,
   StatusDocumentacao,
   Tag,
   Tela,
   TipoParametro,
 } from '../dominio/entidades';
-
-export interface FiltrosParametros {
-  termo?: string;
-  telaId?: string;
-  abaIds?: string[];
-  tipo?: string;
-  tagIds?: string[];
-  operadorTags?: 'E' | 'OU';
-  semTag?: boolean;
-  statusDocumentacao?: StatusDocumentacao;
-  origem?: OrigemItem;
-  ativo?: boolean;
-  pagina: number;
-  porPagina: number;
-  ordenarPor?: 'ordem' | 'nome' | 'grupo' | 'caminho';
-  direcao?: 'asc' | 'desc';
-}
-
-export interface PaginaParametros {
-  itens: Parametro[];
-  total: number;
-}
+import type { CursorCatalogo, FiltrosCatalogo, PaginaCursor } from '../dominio/catalogo';
 
 // ---------------------------------------------------------------------------
 // Parâmetros
 // ---------------------------------------------------------------------------
 
-/** Somente leitura de parâmetros. */
+/** Somente leitura de parâmetros fora da listagem paginada do catálogo. */
 export interface ParametroLeitura {
   buscarPorId(id: string): Promise<Parametro | null>;
-  listar(filtros: FiltrosParametros): Promise<PaginaParametros>;
   listarPorAbas(abaIds: string[]): Promise<Parametro[]>;
   contagemPorAba(): Promise<Record<string, number>>;
 }
@@ -105,6 +82,8 @@ export interface EscritaTipos {
 // ---------------------------------------------------------------------------
 
 export interface TagLeitura {
+  listarComContagem(): Promise<Array<Tag & { totalVinculos: number }>>;
+  listarVinculadas(parametroId: string): Promise<Tag[]>;
   listar(): Promise<Tag[]>;
   buscarPorSlug(slug: string): Promise<Tag | null>;
 }
@@ -122,9 +101,7 @@ export interface VinculoTagLista {
 }
 
 export interface TagVinculo {
-  listarTodos(): Promise<VinculoTagLista[]>;
   listarPorParametro(parametroId: string): Promise<VinculoTagLista[]>;
-  listarPorTag(tagId: string): Promise<VinculoTagLista[]>;
   aplicar(parametroId: string, tagId: string): Promise<void>;
   remover(parametroId: string, tagId: string): Promise<void>;
   /** Usado pela mesclagem de tags: move todos os vínculos. */
@@ -145,6 +122,9 @@ export interface RegistradorHistorico {
 // ---------------------------------------------------------------------------
 
 export interface PortasDeDados {
+  catalogoCursor: {
+    listar(filtros: FiltrosCatalogo, cursor: CursorCatalogo | null, signal?: AbortSignal): Promise<PaginaCursor>;
+  };
   /** Atualização parcial, com versão e histórico atômicos no servidor. */
   documentacao: { salvar(entrada: DocumentacaoParametro): Promise<Parametro> };
   parametroLeitura: ParametroLeitura;

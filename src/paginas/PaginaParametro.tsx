@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
+import { ArrowLeft, Pencil } from 'lucide-react';
+import { useDialogos } from '../componentes/Dialogo';
 import { Migalhas } from '../componentes/Migalhas';
 import { EditorTags } from '../componentes/EditorTags';
 import { Carregando, ErroCarregamento, Vazio } from '../componentes/Estado';
 import {
-  detalharParametro,
+  obterParametro,
+  obterTagsParametro,
+  obterHistoricoParametro,
+  listarTags,
   desativarParametro,
   editarCampoOrigem,
   salvarDocumentacao,
@@ -16,8 +21,12 @@ import {
   useAutenticacao,
 } from '../aplicacao/autenticacao';
 import { Parametro, StatusDocumentacao } from '../dominio/entidades';
+import { StatusParametro } from '../componentes/StatusParametro';
 
 export default function PaginaParametro() {
+  const { confirmar, perguntar } = useDialogos();
+  const local = useLocation();
+  const retorno = typeof local.state?.voltar === 'string' && /^\/(?:\?|busca|tag\/|$)/.test(local.state.voltar) ? local.state.voltar : '/';
   const { id } = useParams<{ id: string }>();
   const { usuario, papel } = useAutenticacao();
   const podeEditar = podeEditarDocumentacao(papel);
@@ -26,9 +35,13 @@ export default function PaginaParametro() {
 
   const consultaDetalhe = useQuery({
     queryKey: ['parametro', id],
-    queryFn: () => detalharParametro(id as string),
+    queryFn: () => obterParametro(id as string),
     enabled: Boolean(id),
   });
+  const [historicoAberto, setHistoricoAberto] = useState(false);
+  const vinculos = useQuery({ queryKey: ['parametro-tags', id], queryFn: () => obterTagsParametro(id!), enabled: Boolean(id) });
+  const catalogoTags = useQuery({ queryKey: ['tags'], queryFn: listarTags, enabled: podeEditar, staleTime: 300_000 });
+  const consultaHistorico = useQuery({ queryKey: ['historico', usuario?.id, id], queryFn: () => obterHistoricoParametro(id!), enabled: Boolean(id && usuario && historicoAberto) });
 
   // ---- Estado do formulário de documentação ----
   const [oQueFaz, setOQueFaz] = useState('');
@@ -61,7 +74,7 @@ export default function PaginaParametro() {
   useEffect(() => {
     const detalhe = consultaDetalhe.data;
     if (detalhe && (rascunho.current.id !== id || !rascunho.current.alterado)) {
-      carregarFormulario(detalhe.parametro);
+      carregarFormulario(detalhe);
     }
   }, [consultaDetalhe.data, id]);
 
@@ -83,6 +96,7 @@ export default function PaginaParametro() {
       setErro('');
       await consulta.invalidateQueries({ queryKey: ['parametro', id] });
       await consulta.invalidateQueries({ queryKey: ['parametros'] });
+      await consulta.invalidateQueries({ queryKey: ['historico'] });
     },
     onError: (causa) => {
       setMensagem('');
@@ -105,10 +119,13 @@ export default function PaginaParametro() {
   if (consultaDetalhe.error) return <ErroCarregamento erro={consultaDetalhe.error} />;
   if (!consultaDetalhe.data) return <Vazio mensagem="Parâmetro não encontrado." />;
 
-  const { parametro, tags, todasTags, historico } = consultaDetalhe.data;
+  const parametro = consultaDetalhe.data;
+  const tags = vinculos.data ?? [];
+  const todasTags = podeEditar ? catalogoTags.data ?? [] : [];
+  const historico = usuario ? consultaHistorico.data ?? [] : [];
 
-  function pedirEdicaoDeOrigem(campo: 'nome' | 'grupo' | 'descricaoOriginal', valorAtual: string | null) {
-    const valor = window.prompt(
+  async function pedirEdicaoDeOrigem(campo: 'nome' | 'grupo' | 'descricaoOriginal', valorAtual: string | null) {
+    const valor = await perguntar(
       `Editar o campo de origem "${campo}".\n\nAtenção: este campo veio do arquivo importado. ` +
         'Ao editá-lo, a próxima importação NÃO sobrescreverá este parâmetro (ficará como conflito para revisão).',
       valorAtual ?? '',
@@ -119,15 +136,14 @@ export default function PaginaParametro() {
 
   return (
     <article className="pagina-parametro">
+      <Link to={retorno} className="inline-flex items-center gap-2 text-sm mb-6"><ArrowLeft size={16} aria-hidden />Voltar ao catálogo</Link>
       <Migalhas segmentos={parametro.caminho.split(' > ')} />
 
       <header className="cabecalho-parametro">
         <h1>{parametro.nome}</h1>
         <div className="etiquetas">
           <span className="etiqueta tipo">{parametro.tipo}</span>
-          <span className={`etiqueta status-${parametro.statusDocumentacao}`}>
-            {parametro.statusDocumentacao}
-          </span>
+          <StatusParametro status={parametro.statusDocumentacao} />
           <span className="etiqueta origem">origem: {parametro.origem}</span>
           {!parametro.ativo && <span className="etiqueta inativo">inativo</span>}
           {parametro.imagemOrigem && (
@@ -160,7 +176,7 @@ export default function PaginaParametro() {
       <div className="grade-detalhe">
         <section className="cartao">
           <h2>
-            Dados de origem <span className="dica">(somente leitura — vindos do arquivo importado)</span>
+            Dados de origem <span className="dica block font-normal">Somente leitura — campos vindos do arquivo importado.</span>
           </h2>
           <dl className="definicoes">
             <dt>Grupo</dt>
@@ -171,9 +187,10 @@ export default function PaginaParametro() {
                   type="button"
                   className="botao-icone pequeno"
                   title="Editar grupo (campo de origem)"
+                  aria-label="Editar grupo (campo de origem)"
                   onClick={() => pedirEdicaoDeOrigem('grupo', parametro.grupo)}
                 >
-                  ✎
+                  <Pencil size={16} aria-hidden />
                 </button>
               )}
             </dd>
@@ -185,9 +202,10 @@ export default function PaginaParametro() {
                   type="button"
                   className="botao-icone pequeno"
                   title="Editar descrição original (campo de origem)"
+                  aria-label="Editar descrição original (campo de origem)"
                   onClick={() => pedirEdicaoDeOrigem('descricaoOriginal', parametro.descricaoOriginal)}
                 >
-                  ✎
+                  <Pencil size={16} aria-hidden />
                 </button>
               )}
             </dd>
@@ -278,12 +296,12 @@ export default function PaginaParametro() {
             <button type="button" className="botao fantasma"
               disabled={salvar.isPending || consultaDetalhe.isFetching}
               onClick={async () => {
-                if (rascunho.current.alterado && !window.confirm('Descartar seu rascunho e carregar a versão atual?')) return;
+                if (rascunho.current.alterado && !await confirmar('Descartar seu rascunho e carregar a versão atual?')) return;
                 const resultado = await consultaDetalhe.refetch();
                 if (resultado.error) {
                   setErro('Não foi possível recarregar. Seu rascunho foi preservado.');
                 } else if (resultado.data) {
-                  carregarFormulario(resultado.data.parametro);
+                  carregarFormulario(resultado.data);
                   setErro('');
                   setMensagem('Versão atual carregada.');
                 }
@@ -299,16 +317,27 @@ export default function PaginaParametro() {
 
         <section className="cartao">
           <h2>Tags</h2>
-          <EditorTags
-            parametroId={parametro.id}
-            tagsVinculadas={tags}
-            todasTags={todasTags}
-            podeEditar={podeEditar}
-          />
+          {vinculos.isPending ? <Carregando /> : vinculos.error ? (
+            <ErroCarregamento erro={vinculos.error} aoTentarNovamente={() => void vinculos.refetch()} />
+          ) : (
+            <>
+              {podeEditar && catalogoTags.error && <ErroCarregamento erro={catalogoTags.error} aoTentarNovamente={() => void catalogoTags.refetch()} />}
+              {podeEditar && catalogoTags.isPending ? <Carregando /> : <EditorTags
+                parametroId={parametro.id}
+                tagsVinculadas={tags}
+                todasTags={todasTags}
+                podeEditar={podeEditar && !catalogoTags.error}
+              />}
+            </>
+          )}
         </section>
 
         <section className="cartao">
-          <h2>Histórico de alterações</h2>
+          <details onToggle={e => setHistoricoAberto(e.currentTarget.open)}>
+          <summary className="font-semibold">Histórico de alterações</summary>
+          {!usuario ? <p className="dica">Entre para consultar o histórico.</p> : !historicoAberto ? null
+            : consultaHistorico.isPending ? <Carregando /> : consultaHistorico.error ?
+            <ErroCarregamento erro={consultaHistorico.error} aoTentarNovamente={() => void consultaHistorico.refetch()} /> : <>
           {historico.length === 0 ? (
             <p className="vazio">Sem alterações registradas.</p>
           ) : (
@@ -327,18 +356,20 @@ export default function PaginaParametro() {
                 <tbody>
                   {historico.map((linha) => (
                     <tr key={linha.id}>
-                      <td>{new Date(linha.criadoEm).toLocaleString('pt-BR')}</td>
-                      <td>{linha.campo}</td>
-                      <td className="celula-caminho">{linha.valorAnterior ?? '—'}</td>
-                      <td className="celula-caminho">{linha.valorNovo ?? '—'}</td>
-                      <td>{linha.origem}</td>
-                      <td>{linha.usuario ?? '—'}</td>
+                      <td data-label="Data">{new Date(linha.criadoEm).toLocaleString('pt-BR')}</td>
+                      <td data-label="Campo">{linha.campo}</td>
+                      <td data-label="Antes" className="celula-caminho">{linha.valorAnterior ?? '—'}</td>
+                      <td data-label="Depois" className="celula-caminho">{linha.valorNovo ?? '—'}</td>
+                      <td data-label="Origem">{linha.origem}</td>
+                      <td data-label="Usuário">{linha.usuario ?? '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
+          </>}
+          </details>
         </section>
       </div>
 
@@ -348,14 +379,17 @@ export default function PaginaParametro() {
             type="button"
             className="botao perigo"
             onClick={async () => {
-              const confirmar = window.confirm(
+              const confirmado = await confirmar(
                 'Desativar este parâmetro? (exclusão lógica — ele deixa de aparecer nas listagens)',
               );
-              if (!confirmar) return;
-              await desativarParametro(parametro.id, usuario?.email ?? null);
-              await consulta.invalidateQueries({ queryKey: ['parametro', id] });
-              await consulta.invalidateQueries({ queryKey: ['arvore'] });
-              await consulta.invalidateQueries({ queryKey: ['parametros'] });
+              if (!confirmado) return;
+              try {
+                await desativarParametro(parametro.id, usuario?.email ?? null);
+                await consulta.invalidateQueries({ queryKey: ['parametro', id] });
+                await consulta.invalidateQueries({ queryKey: ['arvore'] });
+                await consulta.invalidateQueries({ queryKey: ['parametros'] });
+                await consulta.invalidateQueries({ queryKey: ['historico'] });
+              } catch (causa) { setErro(causa instanceof Error ? causa.message : 'Não foi possível desativar.'); }
             }}
           >
             Desativar parâmetro

@@ -1,12 +1,13 @@
 import { useRef, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Carregando } from '../componentes/Estado';
 import { ehAdministrador, useAutenticacao } from '../aplicacao/autenticacao';
 import { importarCatalogoAtual } from '../servicos/catalogo';
 import { RelatorioImportacao } from '../aplicacao/caso-uso-importar';
 import { ConteudoFlat } from '../dominio/mapeador-arquivo';
-import textoOrigem from '../../dados/origem/parametros_myc_flat.json?raw';
+import urlOrigem from '../../dados/origem/parametros_myc_flat.json?url';
+import { useDialogos } from '../componentes/Dialogo';
 
 /**
  * Importação com pré-visualização (dry-run) antes de confirmar.
@@ -14,6 +15,8 @@ import textoOrigem from '../../dados/origem/parametros_myc_flat.json?raw';
  * Idempotente: rodar de novo não duplica nem sobrescreve edições manuais.
  */
 export default function PaginaImportacao() {
+  const { confirmar } = useDialogos();
+  const consulta = useQueryClient();
   const { usuario, papel, carregando } = useAutenticacao();
   const [dryRun, setDryRun] = useState(true);
   const [usarArquivoEnviado, setUsarArquivoEnviado] = useState(false);
@@ -25,12 +28,19 @@ export default function PaginaImportacao() {
 
   const executar = useMutation({
     mutationFn: async () => {
-      const dados = usarArquivoEnviado && conteudoEnviado ? conteudoEnviado : (JSON.parse(textoOrigem) as ConteudoFlat);
+      let dados = conteudoEnviado;
+      if (!usarArquivoEnviado) {
+        const resposta = await fetch(urlOrigem);
+        if (!resposta.ok) throw new Error('Não foi possível carregar o arquivo de origem.');
+        dados = await resposta.json() as ConteudoFlat;
+      }
+      if (!dados || !Array.isArray(dados.parametros)) throw new Error('Selecione um arquivo de origem válido.');
       return importarCatalogoAtual(dados, { dryRun, usuario: usuario?.email ?? null });
     },
-    onSuccess: (resultado) => {
+    onSuccess: async (resultado) => {
       setRelatorio(resultado);
       setErro('');
+      if (!resultado.dryRun) await Promise.all(['parametros','parametro','arvore','abas','telas','tipos','historico'].map(chave => consulta.invalidateQueries({ queryKey: [chave] })));
     },
     onError: (causa) => setErro(causa instanceof Error ? causa.message : String(causa)),
   });
@@ -45,6 +55,8 @@ export default function PaginaImportacao() {
       setNomeArquivo(arquivo.name);
       setErro('');
     } catch {
+      setConteudoEnviado(null);
+      setNomeArquivo('');
       setErro('Arquivo JSON inválido (esperado o formato de parametros_myc_flat.json).');
     }
   }
@@ -71,8 +83,9 @@ export default function PaginaImportacao() {
 
       <form
         className="cartao"
-        onSubmit={(evento) => {
+        onSubmit={async (evento) => {
           evento.preventDefault();
+          if (!dryRun && !await confirmar('Executar importação e gravar alterações? Revise a pré-visualização antes de continuar.')) return;
           executar.mutate();
         }}
       >
@@ -114,7 +127,7 @@ export default function PaginaImportacao() {
           Pré-visualização (dry-run) — calcula o relatório sem gravar nada
         </label>
 
-        <button type="submit" className="botao primario" disabled={executar.isPending}>
+        <button type="submit" className="botao primario" disabled={executar.isPending || (usarArquivoEnviado && !conteudoEnviado)}>
           {executar.isPending ? 'Processando…' : dryRun ? 'Pré-visualizar importação' : 'Executar importação'}
         </button>
       </form>

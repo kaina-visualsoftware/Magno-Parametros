@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PortasDeDados } from '../dados/portas';
 import { abaTeste, parametroTeste } from '../dominio/testes/fixtures';
 import { obterRepositorios } from '../raiz-composicao';
-import { renomearAba, salvarDocumentacao } from './catalogo';
+import { mesclarTags, renomearAba, salvarDocumentacao } from './catalogo';
 
 vi.mock('../raiz-composicao', () => ({ obterRepositorios: vi.fn() }));
 
@@ -13,6 +13,8 @@ describe('Serviços do catálogo', () => {
     arvoreEscrita: { salvarAbas: vi.fn() },
     parametroLeitura: { listarPorAbas: vi.fn(), buscarPorId: vi.fn() },
     parametroEscrita: { salvarEmLote: vi.fn(), salvar: vi.fn() },
+    tagVinculo: { substituirVinculos: vi.fn() },
+    tagEscrita: { excluir: vi.fn() },
     historico: { registrar: vi.fn() },
   };
 
@@ -31,6 +33,13 @@ describe('Serviços do catálogo', () => {
     expect(portas.documentacao.salvar).toHaveBeenCalledWith(entrada);
     expect(portas.parametroLeitura.buscarPorId).not.toHaveBeenCalled();
     expect(portas.parametroEscrita.salvar).not.toHaveBeenCalled();
+    expect(portas.historico.registrar).not.toHaveBeenCalled();
+  });
+
+  it('recusa mesclar uma tag com ela mesma antes de qualquer escrita', async () => {
+    await expect(mesclarTags('mesma', 'mesma', null)).rejects.toThrow('diferentes');
+    expect(portas.tagVinculo.substituirVinculos).not.toHaveBeenCalled();
+    expect(portas.tagEscrita.excluir).not.toHaveBeenCalled();
     expect(portas.historico.registrar).not.toHaveBeenCalled();
   });
 

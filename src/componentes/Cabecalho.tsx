@@ -1,77 +1,36 @@
 import { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
+import { BookOpen, LogIn, LogOut, Menu, X } from 'lucide-react';
 import { useAutenticacao } from '../aplicacao/autenticacao';
+import { AlternadorTema } from './AlternadorTema';
+import { cn } from '../lib/cn';
 
 export function Cabecalho() {
-  const navegar = useNavigate();
   const { usuario, papel, sair } = useAutenticacao();
-  const [termo, setTermo] = useState('');
+  const [aberto, setAberto] = useState(false);
   const [saindo, setSaindo] = useState(false);
-  const [erroSessao, setErroSessao] = useState('');
-
-  async function encerrarSessao() {
-    setSaindo(true);
-    setErroSessao('');
-    try {
-      await sair();
-    } catch {
-      setErroSessao('Não foi possível sair. Tente novamente.');
-    } finally {
-      setSaindo(false);
-    }
-  }
-
-  function submeterBusca(evento: React.FormEvent) {
-    evento.preventDefault();
-    if (termo.trim()) navegar(`/busca?termo=${encodeURIComponent(termo.trim())}`);
-  }
-
-  return (
-    <header className="cabecalho">
-      <Link to="/" className="marca">
-        <span className="marca-principal">Catálogo de Parâmetros</span>
-        <span className="marca-secundaria">MyCommerce · Administração do Sistema</span>
+  const [erro, setErro] = useState('');
+  return <header className="border-b border-linha bg-fundo/95">
+    <div className="max-w-7xl 3xl:max-w-[1440px] mx-auto flex flex-wrap items-center gap-2 sm:gap-4 px-3 sm:px-6 lg:px-10 py-4">
+      <Link to="/" className="flex items-center gap-2 sm:gap-3 !text-tinta mr-auto" aria-label="MyCommerce, catálogo de parâmetros">
+        <span className="bg-elevada border border-linha rounded-xl p-2.5"><BookOpen size={22} aria-hidden className="text-acento" /></span>
+        <span className="flex flex-col leading-tight"><strong className="text-base tracking-tight">MyCommerce</strong><span className="hidden min-[360px]:block text-xs text-suave mt-1">Referência de parâmetros</span></span>
       </Link>
-
-      <nav className="navegacao" aria-label="Navegação principal">
-        <NavLink to="/" end>
-          Catálogo
-        </NavLink>
-        <NavLink to="/tags">Tags</NavLink>
-        {papel === 'administrador' && <NavLink to="/importar">Importar</NavLink>}
-        {papel === 'administrador' && <NavLink to="/novo">Novo parâmetro</NavLink>}
+      <AlternadorTema />
+      <button type="button" className="botao-icone md:hidden" aria-expanded={aberto} aria-controls="menu-principal" aria-label="Menu de navegação" onClick={() => setAberto(!aberto)}>
+        {aberto ? <X size={20} aria-hidden /> : <Menu size={20} aria-hidden />}
+      </button>
+      <nav id="menu-principal" aria-label="Navegação principal" className={cn('items-center gap-1 w-full md:w-auto md:flex', aberto ? 'flex flex-wrap' : 'hidden')}>
+        {[['/', 'Catálogo'], ['/tags', 'Tags'], ...(papel === 'administrador' ? [['/novo','Novo parâmetro'], ['/abas','Abas'], ['/importar','Importar']] : [])].map(([rota,nome]) =>
+          <NavLink key={rota} to={rota} end className={({ isActive }) => cn('rounded-lg px-3 py-2.5 text-sm !text-suave hover:bg-elevada', isActive && 'bg-elevada !text-tinta')} onClick={() => setAberto(false)}>{nome}</NavLink>)}
+        {usuario ? <button className="botao-icone" title={usuario.email} disabled={saindo} onClick={async () => {
+          setSaindo(true); setErro('');
+          try { await sair(); } catch { setErro('Não foi possível sair. Tente novamente.'); }
+          finally { setSaindo(false); }
+        }}><LogOut size={17} aria-hidden /><span className="text-sm">{saindo ? 'Saindo…' : 'Sair'}</span></button>
+          : <Link className="botao-icone" to="/entrar" onClick={() => setAberto(false)}><LogIn size={17} aria-hidden /><span className="text-sm">Entrar</span></Link>}
       </nav>
-
-      <form className="busca-rapida" role="search" onSubmit={submeterBusca}>
-        <input
-          type="search"
-          value={termo}
-          onChange={(evento) => setTermo(evento.target.value)}
-          placeholder="Buscar por nome, descrição ou caminho…"
-          aria-label="Buscar parâmetros"
-        />
-      </form>
-
-      <div className="sessao-usuario">
-        {usuario ? (
-          <>
-            <span className="etiqueta-papel" data-papel={papel ?? 'leitor'}>
-              {papel ?? 'leitor'}
-            </span>
-            <span className="email-usuario" title={usuario.email ?? ''}>
-              {usuario.email}
-            </span>
-            <button type="button" className="botao fantasma" disabled={saindo} onClick={() => void encerrarSessao()}>
-              {saindo ? 'Saindo…' : 'Sair'}
-            </button>
-          </>
-        ) : (
-          <Link className="botao" to="/entrar">
-            Entrar
-          </Link>
-        )}
-      </div>
-      {erroSessao && <p className="erro" role="alert">{erroSessao}</p>}
-    </header>
-  );
+      {erro && <p role="alert" className="erro w-full">{erro}</p>}
+    </div>
+  </header>;
 }

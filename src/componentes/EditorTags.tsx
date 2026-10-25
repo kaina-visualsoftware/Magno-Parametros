@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { X } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Tag } from '../dominio/entidades';
 import { aplicarTag, criarTag, removerTag } from '../servicos/catalogo';
@@ -21,6 +22,8 @@ export function EditorTags({ parametroId, tagsVinculadas, todasTags, podeEditar 
   const [erro, setErro] = useState('');
 
   async function invalidar() {
+    await consulta.invalidateQueries({ queryKey: ['parametro-tags', parametroId] });
+    await consulta.invalidateQueries({ queryKey: ['parametros'] });
     await consulta.invalidateQueries({ queryKey: ['parametro', parametroId] });
     await consulta.invalidateQueries({ queryKey: ['tags'] });
   }
@@ -89,8 +92,9 @@ export function EditorTags({ parametroId, tagsVinculadas, todasTags, podeEditar 
                 title={`Remover tag ${tag.nome}`}
                 aria-label={`Remover tag ${tag.nome}`}
                 onClick={() => remover.mutate(tag.id)}
+                disabled={remover.isPending}
               >
-                ×
+                <X size={16} aria-hidden />
               </button>
             </li>
           ))}

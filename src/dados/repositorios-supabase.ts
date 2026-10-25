@@ -5,6 +5,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { PaginaCursor } from '../dominio/catalogo';
 import {
   Aba,
   EventoHistorico,
@@ -15,14 +16,12 @@ import {
   Tela,
   TipoParametro,
 } from '../dominio/entidades';
-import { criarSlug, normalizarParaBusca } from '../dominio/normalizador';
+import { criarSlug } from '../dominio/normalizador';
 import {
   ArvoreEscrita,
   ArvoreLeitura,
   EscritaTipos,
-  FiltrosParametros,
   LeituraTipos,
-  PaginaParametros,
   ParametroEscrita,
   ParametroImportacao,
   ParametroLeitura,
@@ -139,62 +138,6 @@ export function criarRepositoriosSupabase(cliente: SupabaseClient): PortasDeDado
     return data ? deLinhaParametro(data) : null;
   }
 
-  async function resolverIdsPorTags(tagIds: string[], operador: 'E' | 'OU'): Promise<string[]> {
-    const { data, error } = await cliente.from('parametro_tags').select('parametro_id').in('tag_id', tagIds);
-    if (error) throw error;
-    const contagem = new Map<string, number>();
-    for (const linha of data ?? []) {
-      const id = String(linha.parametro_id);
-      contagem.set(id, (contagem.get(id) ?? 0) + 1);
-    }
-    const pares = [...contagem.entries()];
-    const selecionados = operador === 'E' ? pares.filter(([, total]) => total >= tagIds.length) : pares;
-    return selecionados.map(([id]) => id);
-  }
-
-  async function resolverIdsSemTag(ativos: boolean): Promise<string[]> {
-    const { data: todos, error } = await cliente.from('parametros').select('id').eq('ativo', ativos).limit(50000);
-    if (error) throw error;
-    const { data: vinculados, error: erroVinculos } = await cliente.from('parametro_tags').select('parametro_id');
-    if (erroVinculos) throw erroVinculos;
-    const comTag = new Set((vinculados ?? []).map((linha) => String(linha.parametro_id)));
-    return (todos ?? []).map((linha) => String(linha.id)).filter((id) => !comTag.has(id));
-  }
-
-  function montarConsultaBase(filtros: FiltrosParametros) {
-    let consulta = cliente.from('parametros').select('*', { count: 'exact' });
-    if (filtros.abaIds?.length) consulta = consulta.in('aba_id', filtros.abaIds);
-    if (filtros.tipo) consulta = consulta.eq('tipo', filtros.tipo);
-    if (filtros.statusDocumentacao) consulta = consulta.eq('status_documentacao', filtros.statusDocumentacao);
-    if (filtros.origem) consulta = consulta.eq('origem', filtros.origem);
-    if (filtros.ativo !== undefined) consulta = consulta.eq('ativo', filtros.ativo);
-    if (filtros.termo) consulta = consulta.ilike('texto_busca', `%${normalizarParaBusca(filtros.termo)}%`);
-    const ordenarPor = filtros.ordenarPor ?? 'ordem';
-    consulta = consulta.order(ordenarPor, { ascending: (filtros.direcao ?? 'asc') === 'asc' });
-    const inicio = filtros.pagina * filtros.porPagina;
-    return consulta.range(inicio, inicio + filtros.porPagina - 1);
-  }
-
-  async function listar(filtros: FiltrosParametros): Promise<PaginaParametros> {
-    if (filtros.tagIds?.length) {
-      const ids = await resolverIdsPorTags(filtros.tagIds, filtros.operadorTags ?? 'OU');
-      if (ids.length === 0) return { itens: [], total: 0 };
-      const { data, error, count } = await montarConsultaBase(filtros).in('id', ids);
-      if (error) throw error;
-      return { itens: (data ?? []).map(deLinhaParametro), total: count ?? 0 };
-    }
-    if (filtros.semTag) {
-      const ids = await resolverIdsSemTag(filtros.ativo ?? true);
-      if (ids.length === 0) return { itens: [], total: 0 };
-      const { data, error, count } = await montarConsultaBase(filtros).in('id', ids);
-      if (error) throw error;
-      return { itens: (data ?? []).map(deLinhaParametro), total: count ?? 0 };
-    }
-    const { data, error, count } = await montarConsultaBase(filtros);
-    if (error) throw error;
-    return { itens: (data ?? []).map(deLinhaParametro), total: count ?? 0 };
-  }
-
   async function listarPorAbas(abaIds: string[]): Promise<Parametro[]> {
     if (abaIds.length === 0) return [];
     const saida: Parametro[] = [];
@@ -251,7 +194,7 @@ export function criarRepositoriosSupabase(cliente: SupabaseClient): PortasDeDado
     if (error) throw error;
   }
 
-  const parametroLeitura: ParametroLeitura = { buscarPorId, listar, listarPorAbas, contagemPorAba };
+  const parametroLeitura: ParametroLeitura = { buscarPorId, listarPorAbas, contagemPorAba };
   const parametroImportacao: ParametroImportacao = {
     buscarPorIds,
     salvarEmLote,
@@ -340,6 +283,17 @@ export function criarRepositoriosSupabase(cliente: SupabaseClient): PortasDeDado
   // ---------------- Tags ----------------
 
   const tagLeitura: TagLeitura = {
+    async listarComContagem() {
+      const { data, error } = await cliente.rpc('listar_tags_com_contagem');
+      if (error) throw new Error(error.message);
+      if (!Array.isArray(data)) throw new Error('Resposta de tags inválida.');
+      return data.map(linha => ({ ...deLinhaTag(linha), totalVinculos: Number(linha.totalVinculos) }));
+    },
+    async listarVinculadas(parametroId) {
+      const { data, error } = await cliente.from('tags').select('*,parametro_tags!inner(parametro_id)').eq('parametro_tags.parametro_id', parametroId).order('nome');
+      if (error) throw new Error(error.message);
+      return (data ?? []).map(deLinhaTag);
+    },
     async listar() {
       const { data, error } = await cliente.from('tags').select('*').order('nome');
       if (error) throw error;
@@ -377,30 +331,8 @@ export function criarRepositoriosSupabase(cliente: SupabaseClient): PortasDeDado
   };
 
   const tagVinculo: TagVinculo = {
-    async listarTodos() {
-      const { data, error } = await cliente.from('parametro_tags').select('parametro_id, tag_id, origem');
-      if (error) throw error;
-      return (data ?? []).map(
-        (linha): VinculoTagLista => ({
-          parametroId: String(linha.parametro_id),
-          tagId: String(linha.tag_id),
-          origem: String(linha.origem ?? 'manual'),
-        }),
-      );
-    },
     async listarPorParametro(parametroId) {
       const { data, error } = await cliente.from('parametro_tags').select('parametro_id, tag_id, origem').eq('parametro_id', parametroId);
-      if (error) throw error;
-      return (data ?? []).map(
-        (linha): VinculoTagLista => ({
-          parametroId: String(linha.parametro_id),
-          tagId: String(linha.tag_id),
-          origem: String(linha.origem ?? 'manual'),
-        }),
-      );
-    },
-    async listarPorTag(tagId) {
-      const { data, error } = await cliente.from('parametro_tags').select('parametro_id, tag_id, origem').eq('tag_id', tagId);
       if (error) throw error;
       return (data ?? []).map(
         (linha): VinculoTagLista => ({
@@ -488,6 +420,20 @@ export function criarRepositoriosSupabase(cliente: SupabaseClient): PortasDeDado
   };
 
   return {
+    catalogoCursor: {
+      async listar(filtros, cursor, signal) {
+        let consulta = cliente.rpc('listar_parametros_catalogo', { p_filtros: filtros, p_cursor: cursor, p_limite: 50 });
+        if (signal) consulta = consulta.abortSignal(signal);
+        const { data, error } = await consulta;
+        if (error) throw new Error(error.code === 'PGRST202'
+          ? 'Catálogo indisponível: a migração 0007 precisa ser aplicada pelo administrador.' : error.message);
+        if (!data || !Array.isArray(data.itens) || !('proximoCursor' in data)
+          || data.itens.some((p: Record<string, unknown>) => !p || typeof p.id !== 'string' || typeof p.nome !== 'string')) {
+          throw new Error('Resposta do catálogo inválida.');
+        }
+        return data as PaginaCursor;
+      },
+    },
     documentacao: {
       async salvar(entrada) {
         const { data, error } = await cliente.rpc('salvar_documentacao', {

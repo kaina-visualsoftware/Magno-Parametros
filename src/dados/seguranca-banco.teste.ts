@@ -48,6 +48,7 @@ describe.skipIf(!url)('Postgres isolado: RLS, documentação e concorrência', (
       }
       // A migração aditiva também deve poder ser reaplicada sem perder dados.
       await pool.query(readFileSync(resolve('migracoes/0006_documentacao_segura.sql'), 'utf8'));
+      await pool.query(readFileSync(resolve('migracoes/0007_catalogo_cursor.sql'), 'utf8'));
     }
     expect((await pool.query('select count(*)::int as total from auth.users')).rows[0].total).toBe(0);
     await pool.query(`
@@ -76,6 +77,77 @@ describe.skipIf(!url)('Postgres isolado: RLS, documentação e concorrência', (
     }
   });
   afterAll(async () => { await pool?.end(); });
+
+  async function catalogo(filtros: Record<string, unknown> = {}, cursor: unknown = null, limite = 1) {
+    const { rows } = await cliente.query('select public.listar_parametros_catalogo($1::jsonb,$2::jsonb,$3) as pagina',
+      [JSON.stringify(filtros), cursor === null ? null : JSON.stringify(cursor), limite]);
+    return rows[0].pagina as { itens: Array<{ id: string; nome: string }>; proximoCursor: unknown };
+  }
+
+  it.each(['nome','grupo','caminho','ordem'].flatMap(ordem => ['asc','desc'].map(direcao => ({ ordem, direcao }))))
+    ('cursor estável em $ordem $direcao, inclusive empates', async ({ ordem, direcao }) => {
+      await cliente.query(`insert into public.parametros(id,aba_id,grupo,nome,tipo,caminho,ordem)
+        values ('igual1','aba','Geral','Mesmo','checkbox','Mesmo',2), ('igual2','aba','Geral','Mesmo','checkbox','Mesmo',2),
+          ('dez','aba','Outro','Z','checkbox','Z',10)`);
+      const esperados = (await cliente.query(`select id from public.parametros order by ${ordem} ${direcao}, id asc`)).rows.map(r => r.id);
+      await cliente.query('set local role anon');
+      const ids: string[] = [];
+      let cursor: unknown = null;
+      for (let i = 0; i < 10; i++) {
+        const pagina = await catalogo({ ordem, direcao }, cursor);
+        expect(pagina.itens.length).toBeLessThanOrEqual(1);
+        ids.push(...pagina.itens.map(p => p.id));
+        cursor = pagina.proximoCursor;
+        if (!cursor) break;
+      }
+      expect(ids).toEqual(esperados);
+      expect(new Set(ids).size).toBe(ids.length);
+    });
+
+  it('RPC invoker respeita RLS restritiva como visitante', async () => {
+    await cliente.query(`create policy esconder_corrida on public.parametros as restrictive for select to anon using (id <> 'corrida')`);
+    await cliente.query('set local role anon');
+    const pagina = await catalogo({}, null, 100);
+    expect(pagina.itens.map(p => p.id)).toEqual(['p']);
+    expect(pagina.itens[0]).not.toHaveProperty('o_que_faz');
+  });
+
+  it('tags E/OU deduplicadas, sem tag e filtros combinados', async () => {
+    const a = '10000000-0000-0000-0000-000000000001';
+    const b = '10000000-0000-0000-0000-000000000002';
+    await cliente.query(`insert into public.tags(id,nome,slug) values ($1,'A','a'),($2,'B','b')`, [a,b]);
+    await cliente.query(`insert into public.parametro_tags(parametro_id,tag_id) values ('p',$1),('p',$2),('corrida',$1)`, [a,b]);
+    await cliente.query('set local role anon');
+    expect((await catalogo({ tags: [a,b], operador: 'OU' },null,100)).itens).toHaveLength(2);
+    expect((await catalogo({ tags: [a,b,a], operador: 'E', tipo: 'checkbox', status: 'pendente' },null,100)).itens.map(p => p.id)).toEqual(['p']);
+    expect((await catalogo({ semTag: true },null,100)).itens).toEqual([]);
+    const { rows } = await cliente.query('select public.listar_tags_com_contagem() as tags');
+    expect(rows[0].tags.map((t: { totalVinculos: number }) => t.totalVinculos)).toEqual([2,1]);
+  });
+
+  it('busca normalizada trata % e _ como caracteres literais', async () => {
+    await cliente.query(`update public.parametros set texto_busca = 'orcamento 10% x_y' where id='p'`);
+    await cliente.query('set local role anon');
+    for (const termo of ['ORÇAMENTO', '%', '_']) expect((await catalogo({ termo },null,100)).itens.map(p => p.id)).toEqual(['p']);
+    expect((await catalogo({ termo: 'inexistente' })).proximoCursor).toBeNull();
+  });
+
+  it.each([
+    [{ ordem: 'id;drop table parametros' },null,50], [{ direcao: 'sql' },null,50], [{ status: 'errado' },null,50],
+    [{},null,101], [{},null,0], [{ tags: ['x'] },null,50], [{ tags: [null] },null,50],
+    [{ semTag: true, tags: ['10000000-0000-0000-0000-000000000001'] },null,50],
+    [{}, { v: 1, f: 'x', id: 'p', valor: 'a' }, 50], [{ ativo: 'sql' },null,50],
+  ])('RPC rejeita entrada inválida %#', async (filtros,cursor,limite) => {
+    await cliente.query('set local role anon');
+    await expect(catalogo(filtros as Record<string,unknown>,cursor,limite as number)).rejects.toThrow();
+  });
+
+  it('cursor não pode ser reutilizado após mudança de filtro', async () => {
+    await cliente.query('set local role anon');
+    const pagina = await catalogo();
+    expect(pagina.proximoCursor).not.toBeNull();
+    await expect(catalogo({ termo: 'outro' }, pagina.proximoCursor)).rejects.toMatchObject({ code: '22023' });
+  });
 
   it('visitante lê catálogo, mas não executa RPC nem altera dados', async () => {
     await cliente.query('set local role anon');
@@ -199,7 +271,9 @@ describe.skipIf(!url)('Postgres isolado: RLS, documentação e concorrência', (
 
 describe('Instalação SQL alternativa', () => {
   it('contém a migração de segurança integral, sem divergência', () => {
-    const migracao = readFileSync(resolve('migracoes/0006_documentacao_segura.sql'), 'utf8').trim();
-    expect(readFileSync(resolve('supabase/schema.sql'), 'utf8').trim().endsWith(migracao)).toBe(true);
+    const schema = readFileSync(resolve('supabase/schema.sql'), 'utf8');
+    for (const f of readdirSync(resolve('migracoes')).filter(f => f.endsWith('.sql'))) {
+      expect(schema).toContain(readFileSync(resolve('migracoes', f), 'utf8').trim());
+    }
   });
 });

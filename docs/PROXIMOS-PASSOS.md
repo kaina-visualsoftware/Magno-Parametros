@@ -18,7 +18,7 @@ têm suas contas alteradas automaticamente.
 
 ## Aplicação da correção
 
-1. Faça backup e valide a migração 0006 em um projeto Supabase separado.
+1. Faça backup e valide as migrações 0006 e 0007 em um projeto Supabase separado.
 2. Aplique `npm run migrar` no ambiente autorizado antes de publicar o frontend.
 3. Configure `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` nos secrets do GitHub.
    Nunca use uma chave `service_role` em variável `VITE_`.
@@ -26,6 +26,8 @@ têm suas contas alteradas automaticamente.
    documentação exclusivamente pela RPC `salvar_documentacao`.
 5. Confira leitura pública, login, documentação por editor, impedimento de
    alterações de origem por editor e operações administrativas.
+6. Confirme que a RPC `listar_parametros_catalogo` responde 200 como `anon`; sem
+   a migração 0007 o catálogo mostra uma orientação de rollout, sem fallback lento.
 
 A migração adiciona `parametros.versao`, restringe UPDATE direto a administradores
 e torna documentação e seu histórico uma transação. A versão carregada é
@@ -57,10 +59,12 @@ As configurações e contagens atuais precisam de conferência no ambiente autor
 
 ```bash
 npm ci
+npm run typecheck
 npm test
+npm run test:e2e
 npm run build
 ```
 
-Os testes de banco usam somente um Postgres descartável local; veja
-`docs/TESTES.md`. Nenhum comando de migração, importação ou OCR deve apontar
-para produção sem autorização.
+Os testes de banco usam somente um Postgres descartável local com
+`TEST_DATABASE_URL` terminando em `_test`; veja o README. Nenhum comando de
+migração, importação ou OCR deve apontar para produção sem autorização.

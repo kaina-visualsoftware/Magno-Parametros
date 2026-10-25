@@ -1,6 +1,8 @@
 # dependências e build
 node_modules/
 dist/
+test-results/
+playwright-report/
 
 # ambiente e segredos
 .env

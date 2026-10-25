@@ -1,16 +1,45 @@
 export function Carregando() {
-  return <p className="carregando">Carregando…</p>;
+  return <p className="carregando" role="status">Carregando…</p>;
 }
 
 export function Vazio({ mensagem }: { mensagem: string }) {
   return <p className="vazio">{mensagem}</p>;
 }
 
-export function ErroCarregamento({ erro }: { erro: unknown }) {
+export function SkeletonLinhas({ total = 8 }: { total?: number } = {}) {
   return (
-    <p className="erro">
-      Não foi possível carregar: {erro instanceof Error ? erro.message : String(erro)}
-    </p>
+    <div className="skeleton-lista" role="status" aria-label="Carregando parâmetros">
+      {Array.from({ length: total }).map((_, indice) => (
+        <div key={indice} className="skeleton-linha">
+          <span className="skeleton-celula" style={{ width: '26%' }} />
+          <span className="skeleton-celula" style={{ width: '14%' }} />
+          <span className="skeleton-celula" style={{ width: '18%' }} />
+          <span className="skeleton-celula" style={{ width: '14%' }} />
+          <span className="skeleton-celula" style={{ width: '28%' }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function ErroCarregamento({
+  erro,
+  aoTentarNovamente,
+}: {
+  erro: unknown;
+  aoTentarNovamente?: () => void;
+}) {
+  return (
+    <div className="erro-com-retry" role="alert">
+      <p>
+        Não foi possível carregar: {erro instanceof Error ? erro.message : String(erro)}
+      </p>
+      {aoTentarNovamente && (
+        <button type="button" className="botao fantasma" onClick={aoTentarNovamente}>
+          Tentar novamente
+        </button>
+      )}
+    </div>
   );
 }
 

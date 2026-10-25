@@ -3,6 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b0d10" />
+    <script>
+      // Aplica o tema antes da primeira pintura; storage bloqueado não impede abrir.
+      (() => {
+        let tema = 'dark';
+        try {
+          if (localStorage.getItem('magno-parametros:tema') === 'light') tema = 'light';
+        } catch { /* Preferência indisponível. */ }
+        document.documentElement.dataset.theme = tema;
+        document.documentElement.style.colorScheme = tema;
+      })();
+    </script>
     <meta name="description" content="Catálogo de parâmetros do MyCommerce — Administração do Sistema" />
     <title>Catálogo de Parâmetros · MyCommerce</title>
   </head>

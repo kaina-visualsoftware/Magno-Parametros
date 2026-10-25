@@ -73,15 +73,15 @@ papel para a UI. Nenhuma query fora dos repositórios.
 ## Segregação de interfaces (I)
 
 Nenhuma porta tem mais de 6 métodos; a importação usa a porta mínima
-(`ParametroImportacao` = 2 métodos) e não recebe escrita completa:
+(`ParametroImportacao` = 3 métodos) e não recebe escrita completa:
 
 | Porta | Métodos |
 | --- | --- |
-| `ParametroLeitura` | buscarPorId, listar, listarPorAbas, contagemPorAba |
-| `ParametroImportacao` | buscarPorIds, salvarEmLote |
+| `ParametroLeitura` | buscarPorId, listarPorAbas, contagemPorAba |
+| `ParametroImportacao` | buscarPorIds, listarIdsImportados, salvarEmLote |
 | `ParametroEscrita` | + salvar, desativar |
 | `ArvoreLeitura` / `ArvoreEscrita` | 2 / 3 |
-| `TagLeitura` / `TagEscrita` / `TagVinculo` | 2 / 3 / 6 |
+| `TagLeitura` / `TagEscrita` / `TagVinculo` | 4 / 3 / 4 |
 | `RegistradorHistorico` | registrar, listar |
 
 Casos de uso recebem só o que usam: `PortasImportacao = Pick<PortasDeDados, …>`.

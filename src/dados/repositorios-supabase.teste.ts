@@ -2,8 +2,27 @@ import { describe, expect, it, vi } from 'vitest';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { criarRepositoriosSupabase } from './repositorios-supabase';
 import { parametroTeste } from '../dominio/testes/fixtures';
+import { lerFiltros } from '../dominio/catalogo';
 
 describe('Adaptador Supabase', () => {
+  it('catálogo usa RPC resumida e cancelável, nunca select/count', async () => {
+    const resposta = { data: { itens: [], proximoCursor: null }, error: null };
+    const abortSignal = vi.fn().mockResolvedValue(resposta);
+    const rpc = vi.fn().mockReturnValue({ abortSignal });
+    const from = vi.fn();
+    const repo = criarRepositoriosSupabase({ rpc, from } as unknown as SupabaseClient);
+    const filtros = lerFiltros(new URLSearchParams());
+    const sinal = new AbortController().signal;
+    expect(await repo.catalogoCursor.listar(filtros, null, sinal)).toEqual(resposta.data);
+    expect(rpc).toHaveBeenCalledWith('listar_parametros_catalogo', { p_filtros: filtros, p_cursor: null, p_limite: 50 });
+    expect(abortSignal).toHaveBeenCalledWith(sinal);
+    expect(from).not.toHaveBeenCalled();
+  });
+  it('RPC ausente orienta rollout, sem fallback lento silencioso', async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: { code: 'PGRST202' } });
+    const repo = criarRepositoriosSupabase({ rpc } as unknown as SupabaseClient);
+    await expect(repo.catalogoCursor.listar(lerFiltros(new URLSearchParams()), null)).rejects.toThrow('0007');
+  });
   it('documentação usa somente RPC, retornando versão e propagando erro legível', async () => {
     const rpc = vi.fn().mockResolvedValue({ data: { id: 'p', versao: 3 }, error: null });
     const from = vi.fn();

@@ -4,17 +4,19 @@ import { Cabecalho } from './componentes/Cabecalho';
 import { Carregando, TelaConfiguracao } from './componentes/Estado';
 import PaginaCatalogo from './paginas/PaginaCatalogo';
 import PaginaBusca from './paginas/PaginaBusca';
-import PaginaParametro from './paginas/PaginaParametro';
-import PaginaNovoParametro from './paginas/PaginaNovoParametro';
-import PaginaTags from './paginas/PaginaTags';
-import PaginaTag from './paginas/PaginaTag';
-import PaginaEntrar from './paginas/PaginaEntrar';
 import PaginaNaoEncontrada from './paginas/PaginaNaoEncontrada';
 import { configuracaoPresente } from './raiz-composicao';
+import { ProvedorDialogos } from './componentes/Dialogo';
 
 // A página de importação carrega o JSON de origem — importada de forma tardia
 // para não pesar no pacote principal.
 const PaginaImportacao = lazy(() => import('./paginas/PaginaImportacao'));
+const PaginaParametro = lazy(() => import('./paginas/PaginaParametro'));
+const PaginaNovoParametro = lazy(() => import('./paginas/PaginaNovoParametro'));
+const PaginaTags = lazy(() => import('./paginas/PaginaTags'));
+const PaginaAbas = lazy(() => import('./paginas/PaginaAbas'));
+const PaginaTag = lazy(() => import('./paginas/PaginaTag'));
+const PaginaEntrar = lazy(() => import('./paginas/PaginaEntrar'));
 
 export default function App() {
   if (!configuracaoPresente()) {
@@ -22,9 +24,10 @@ export default function App() {
   }
 
   return (
-    <div className="aplicacao">
+    <ProvedorDialogos><div className="aplicacao">
+      <a href="#conteudo" className="sr-only focus:not-sr-only focus:p-4" onClick={e => { e.preventDefault(); document.getElementById('conteudo')?.focus(); }}>Pular para o conteúdo</a>
       <Cabecalho />
-      <main className="conteudo">
+      <main className="conteudo" id="conteudo" tabIndex={-1}>
         <Suspense fallback={<Carregando />}>
           <Routes>
             <Route path="/" element={<PaginaCatalogo />} />
@@ -32,6 +35,7 @@ export default function App() {
             <Route path="/parametro/:id" element={<PaginaParametro />} />
             <Route path="/novo" element={<PaginaNovoParametro />} />
             <Route path="/tags" element={<PaginaTags />} />
+            <Route path="/abas" element={<PaginaAbas />} />
             <Route path="/tag/:slug" element={<PaginaTag />} />
             <Route path="/importar" element={<PaginaImportacao />} />
             <Route path="/entrar" element={<PaginaEntrar />} />
@@ -40,8 +44,8 @@ export default function App() {
         </Suspense>
       </main>
       <footer className="rodape">
-        Catálogo de parâmetros do MyCommerce · Administração do Sistema
+        <span>MyCommerce / Referência de parâmetros</span><span>Conhecimento para configurar com confiança.</span>
       </footer>
-    </div>
+    </div></ProvedorDialogos>
   );
 }
