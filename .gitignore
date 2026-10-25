@@ -9,6 +9,9 @@ playwright-report/
 .env.local
 .env.*.local
 
+# GitHub token para reportar problemas
+.env.local
+
 # artefatos derivados (regeneráveis pelos scripts)
 dados/ocr-cache/
 dados/ocr-modelos/

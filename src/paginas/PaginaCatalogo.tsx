@@ -9,6 +9,7 @@ import { ErroCarregamento, SkeletonLinhas } from '../componentes/Estado';
 import { StatusParametro } from '../componentes/StatusParametro';
 import { CopiarCaminho } from '../componentes/CopiarCaminho';
 import { useAutenticacao } from '../aplicacao/autenticacao';
+import { useDebounce } from '../hooks/useDebounce';
 
 export default function PaginaCatalogo({ tagFixa, titulo }: { tagFixa?: string; titulo?: string }) {
   const [url, setUrl] = useSearchParams();
@@ -24,14 +25,17 @@ export default function PaginaCatalogo({ tagFixa, titulo }: { tagFixa?: string; 
   const urlRef = useRef(url);
   urlRef.current = url;
   useEffect(() => { setTermo(filtros.termo ?? ''); }, [filtros.termo]);
+
+  // Debounce com trailing behavior: garante que a última chamada seja executada
+  const atualizarURL = useDebounce((novoTermo: string) => {
+    const f = lerFiltros(urlRef.current);
+    setUrl(escreverFiltros({ ...f, termo: novoTermo.trim().slice(0,200) || undefined }), { replace: true });
+  }, 300);
+
   useEffect(() => {
     if (termo === (filtros.termo ?? '')) return;
-    const timer = setTimeout(() => {
-      const f = lerFiltros(urlRef.current);
-      setUrl(escreverFiltros({ ...f, termo: termo.trim().slice(0,200) || undefined }), { replace: true });
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [termo, filtros.termo, setUrl]);
+    atualizarURL(termo);
+  }, [termo, filtros.termo, atualizarURL]);
   useEffect(() => {
     const atalho = (e: KeyboardEvent) => {
       const alvo = e.target as HTMLElement;
