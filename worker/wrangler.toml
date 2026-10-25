@@ -1,0 +1,9 @@
+name = "magno-parametros-proxy"
+main = "index.ts"
+compatibility_date = "2026-10-25"
+
+# Valores públicos, não são segredos. A chave publishable continua sendo
+# enviada pelo navegador e repassada ao Supabase; o Worker não guarda chaves.
+[vars]
+SUPABASE_URL = "https://dmgmalzqywrjecvzbkjy.supabase.co"
+ALLOWED_ORIGINS = "https://kaina-visualsoftware.github.io,http://localhost:5173"
