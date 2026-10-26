@@ -1,31 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" preserveAspectRatio="xMidYMid slice">
-  <!-- Background -->
-  <rect width="1200" height="300" fill="#0b0d10"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b0d10"/>
+      <stop offset="100%" stop-color="#1a1c22"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#bgGrad)"/>
   <!-- Top navigation bar -->
-  <rect y="0" width="1200" height="50" fill="#1a1c22"/>
-  <!-- Logo placeholder -->
+  <rect y="0" width="1200" height="50" fill="rgba(255,255,255,0.05)"/>
+  <!-- Logo -->
   <circle cx="30" cy="25" r="12" fill="#6cd7bb"/>
   <text x="55" y="32" font-family="Arial,Helvetica,sans-serif" font-size="20" fill="#e0e0e0">MyCommerce</text>
   <!-- Search bar -->
   <rect x="250" y="10" width="500" height="30" rx="5" ry="5" fill="#303945"/>
-  <text x="260" y="30" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#a3adb9">Buscar parâmetros...</text>
-  <!-- Mock content cards -->
-  <g transform="translate(250,70)">
-    <!-- First card -->
-    <rect width="500" height="70" rx="6" ry="6" fill="#1a1c22"/>
-    <text x="15" y="30" font-family="Arial,Helvetica,sans-serif" font-size="16" fill="#e0e0e0">Nome do parâmetro 1</text>
-    <text x="15" y="55" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#a3adb9">Grupo • Tipo • Caminho</text>
-    <!-- Second card -->
-    <rect y="90" width="500" height="70" rx="6" ry="6" fill="#1a1c22"/>
-    <text x="15" y="120" font-family="Arial,Helvetica,sans-serif" font-size="16" fill="#e0e0e0">Nome do parâmetro 2</text>
-    <text x="15" y="145" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#a3adb9">Grupo • Tipo • Caminho</text>
-    <!-- Third card -->
-    <rect y="180" width="500" height="70" rx="6" ry="6" fill="#1a1c22"/>
-    <text x="15" y="210" font-family="Arial,Helvetica,sans-serif" font-size="16" fill="#e0e0e0">Nome do parâmetro 3</text>
-    <text x="15" y="235" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#a3adb9">Grupo • Tipo • Caminho</text>
+  <text x="260" y="30" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#a3adb9">Buscar parâmetros…</text>
+  <!-- Hero mock table -->
+  <g transform="translate(150,80)">
+    <!-- Table header -->
+    <rect y="0" width="900" height="30" fill="#1a1c22"/>
+    <text x="20" y="20" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#e0e0e0">Nome</text>
+    <text x="300" y="20" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#e0e0e0">Grupo</text>
+    <text x="600" y="20" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#e0e0e0">Tipo</text>
+    <!-- Row 1 -->
+    <rect y="30" width="900" height="30" fill="#0b0d10"/>
+    <text x="20" y="50" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#a3adb9">Parâmetro 1</text>
+    <text x="300" y="50" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#a3adb9">Grupo A</text>
+    <text x="600" y="50" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#a3adb9">Texto</text>
+    <!-- Row 2 -->
+    <rect y="60" width="900" height="30" fill="#1a1c22"/>
+    <text x="20" y="80" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#e0e0e0">Parâmetro 2</text>
+    <text x="300" y="80" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#e0e0e0">Grupo B</text>
+    <text x="600" y="80" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#e0e0e0">Número</text>
+    <!-- Row 3 -->
+    <rect y="90" width="900" height="30" fill="#0b0d10"/>
+    <text x="20" y="110" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#a3adb9">Parâmetro 3</text>
+    <text x="300" y="110" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#a3adb9">Grupo C</text>
+    <text x="600" y="110" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#a3adb9">Valor</text>
   </g>
-  <!-- Footer accent line -->
-  <rect y="295" width="1200" height="5" fill="#6cd7bb"/>
-  <!-- Title overlay -->
-  <text x="50%" y="260" font-family="Arial,Helvetica,sans-serif" font-size="28" fill="#6cd7bb" text-anchor="middle">Catálogo de Parâmetros</text>
+  <!-- Accent line -->
+  <rect y="395" width="1200" height="5" fill="#6cd7bb"/>
+  <text x="50%" y="370" font-family="Arial,Helvetica,sans-serif" font-size="28" fill="#6cd7bb" text-anchor="middle">Catálogo de Parâmetros</text>
 </svg>
