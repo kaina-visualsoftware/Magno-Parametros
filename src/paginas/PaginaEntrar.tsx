@@ -60,10 +60,6 @@ export default function PaginaEntrar() {
           </button>
         </form>
 
-        <p className="dica">
-          As contas são criadas pelo administrador no painel do Supabase (Authentication → Users). O
-          primeiro administrador é promovido via SQL — veja o passo a passo no README.
-        </p>
       </div>
     </div>
   );

@@ -133,6 +133,30 @@ npm run build      # tsc --noEmit + build de produção
 - **Renomear aba** (admin, página Abas): recalcula o caminho de todos os
   descendentes e preserva o nome original importado (abas truncadas como `Condici...`).
 
+## Capturas de tela
+
+![Catálogo de parâmetros](https://github.com/kaina-visualsoftware/Magno-Parametros/blob/main/docs/imagens/catalogo.png?raw=true)
+
+![Página de detalhes do parâmetro](https://github.com/kaina-visualsoftware/Magno-Parametros/blob/main/docs/imagens/detalhes-parametro.png?raw=true)
+
+![Página de tags](https://github.com/kaina-visualsoftware/Magno-Parametros/blob/main/docs/imagens/tags.png?raw=true)
+
+## Como contribuir
+
+1. Faça um fork do repositório.
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-funcionalidade`).
+3. Commit suas mudanças (`git commit -m 'Adiciona nova funcionalidade'`).
+4. Faça push para a branch (`git push origin feature/nova-funcionalidade`).
+5. Abra um Pull Request.
+
+## Licença
+
+Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+## Contato
+
+Para dúvidas ou sugestões, entre em contato pelo e-mail: kaina.visualsoftware@gmail.com
+
 ## Deploy no GitHub Pages
 
 1. Repositório `magno-parametros` com o código na branch `main`.
