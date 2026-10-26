@@ -25,7 +25,7 @@ export default function PaginaEntrar() {
   }
 
   return (
-    <div className="pagina-entrar">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
       <h1>Entrar</h1>
       <p className="dica">
         A leitura do catálogo é pública. Entre para <strong>editar documentação</strong> (editor) ou{' '}
