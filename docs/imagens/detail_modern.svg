@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500" preserveAspectRatio="xMidYMid slice"
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b0d10"/>
+      <stop offset="100%" stop-color="#1a1c22"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="500" fill="url(#bg)"/>
+  <!-- Header -->
+  <rect y="0" width="1200" height="60" fill="rgba(255,255,255,0.04)"/>
+  <circle cx="30" cy="30" r="12" fill="#6cd7bb"/>
+  <text x="55" y="38" font-family="Arial,Helvetica,sans-serif" font-size="22" fill="#e0e0e0" font-weight="bold">MyCommerce</text>
+  <!-- Breadcrumb -->
+  <text x="250" y="45" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#a3adb9">Utilitários > Configuração > Administração do Sistema > </text>
+  <text x="800" y="45" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#6cd7bb">Parâmetro X</text>
+  <!-- Detail Card -->
+  <g transform="translate(250,80)">
+    <rect width="700" height="340" rx="12" ry="12" fill="#1a1c22" filter="url(#shadow)"/>
+    <text x="30" y="30" font-family="Arial,Helvetica,sans-serif" font-size="20" fill="#e0e0e0">Nome do parâmetro</text>
+    <text x="30" y="60" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#a3adb9">Grupo • Tipo • Caminho</text>
+    <text x="30" y="100" font-family="Arial,Helvetica,sans-serif" font-size="16" fill="#e0e0e0">O que faz</text>
+    <rect x="30" y="110" width="640" height="50" fill="#0b0d10"/>
+    <text x="35" y="140" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#a3adb9">Descrição curta da funcionalidade…</text>
+    <text x="30" y="190" font-family="Arial,Helvetica,sans-serif" font-size="16" fill="#e0e0e0">Impacto</text>
+    <rect x="30" y="200" width="640" height="50" fill="#0b0d10"/>
+    <text x="35" y="230" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#a3adb9">Impacto ao mudar o parâmetro…</text>
+    <text x="30" y="280" font-family="Arial,Helvetica,sans-serif" font-size="16" fill="#e0e0e0">Valor padrão</text>
+    <rect x="30" y="290" width="200" height="30" fill="#0b0d10"/>
+    <text x="35" y="310" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#a3adb9">0</text>
+    <text x="300" y="310" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#a3adb9">(exemplo)</text>
+  </g>
+  <rect y="495" width="1200" height="5" fill="#6cd7bb"/>
+  <text x="50%" y="470" font-family="Arial,Helvetica,sans-serif" font-size="28" fill="#6cd7bb" text-anchor="middle">Detalhes do Parâmetro</text>
+</svg>

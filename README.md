@@ -1,6 +1,6 @@
 # MyCommerce – Catálogo de Parâmetros
 
-![MyCommerce – Catálogo de Parâmetros](docs/banner.svg)
+![MyCommerce – Catálogo de Parâmetros](docs/imagens/home_modern.svg)
 
 
 **Visão geral**
@@ -32,28 +32,13 @@ Acesse a aplicação hospedada em: https://kaina-visualsoftware.github.io/Magno-
 
 **Capturas de tela**
 
-![Catálogo de parâmetros](docs/imagens/catalog.svg)
+![Catálogo de parâmetros](docs/imagens/home_modern.svg)
 
-![Detalhes do parâmetro](docs/imagens/detail.svg)
+![Detalhes do parâmetro](docs/imagens/detail_modern.svg)
 
-![Gerenciamento de tags](docs/imagens/tags_mock.svg)
+![Gerenciamento de tags](docs/imagens/tags_modern.svg)
 
-**Instalação rápida**
 
-```bash
-# clonar repositório
-git clone https://github.com/kaina-visualsoftware/Magno-Parametros.git
-cd Magno-Parametros
-
-# instalar dependências
-npm install
-
-# configurar variáveis de ambiente (copiar .env.example → .env e preencher VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY)
-cp .env.example .env
-
-# iniciar em modo desenvolvimento
-npm run dev
-```
 
 **Como contribuir**
 
