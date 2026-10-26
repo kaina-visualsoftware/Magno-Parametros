@@ -28,8 +28,9 @@ export default function PaginaParametro() {
   const local = useLocation();
   const retorno = typeof local.state?.voltar === 'string' && /^\/(?:\?|busca|tag\/|$)/.test(local.state.voltar) ? local.state.voltar : '/';
   const { id } = useParams<{ id: string }>();
-  const { usuario, papel } = useAutenticacao();
+const { usuario, papel } = useAutenticacao();
   const podeEditar = podeEditarDocumentacao(papel);
+
   const admin = ehAdministrador(papel);
   const consulta = useQueryClient();
 

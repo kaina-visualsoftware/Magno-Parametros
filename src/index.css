@@ -2,6 +2,14 @@
 
 /* Índice técnico MyCommerce. O caminho do ERP é contexto; a busca é o centro.
    Tokens compartilhados entre Tailwind e os formulários administrativos. */
+html {
+  visibility: hidden;
+}
+
+body {
+  visibility: visible;
+}
+
 :root {
   color-scheme: dark;
   --fundo: #0b0d10;

@@ -82,8 +82,12 @@ export function ProvedorAutenticacao({ children }: { children: ReactNode }) {
   }, [usuario]);
 
   async function entrar(email: string, senha: string): Promise<void> {
+    console.log('Tentando autenticar com:', email); // Adicione este log
     const { error } = await obterClienteSupabase().auth.signInWithPassword({ email, password: senha });
-    if (error) throw error;
+    if (error) {
+      console.error('Erro de autenticação:', error); // Adicione este log
+      throw error;
+    }
   }
 
   async function sair(): Promise<void> {
@@ -103,6 +107,10 @@ export function useAutenticacao(): EstadoAutenticacao {
 
 export function podeEditarDocumentacao(papel: Papel | null): boolean {
   return papel === 'editor' || papel === 'administrador';
+}
+
+export function podeEditarComoAdmin(papel: Papel | null): boolean {
+  return papel === 'administrador';
 }
 
 export function ehAdministrador(papel: Papel | null): boolean {
