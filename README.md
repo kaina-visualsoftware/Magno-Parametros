@@ -32,11 +32,11 @@ Acesse a aplicação hospedada em: https://kaina-visualsoftware.github.io/Magno-
 
 **Capturas de tela**
 
-![Catálogo de parâmetros](docs/imagens/home_modern.svg)
+![Catálogo de parâmetros](docs/imagens/promotional_home_laptop.svg)
 
-![Detalhes do parâmetro](docs/imagens/detail_modern.svg)
+![Detalhes do parâmetro](docs/imagens/promotional_detail_laptop.svg)
 
-![Gerenciamento de tags](docs/imagens/tags_modern.svg)
+![Gerenciamento de tags](docs/imagens/promotional_tags_phone.svg)
 
 
 
