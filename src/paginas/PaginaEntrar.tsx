@@ -25,44 +25,46 @@ export default function PaginaEntrar() {
   }
 
   return (
-    <div className="pagina-formulario">
-      <h1>Entrar</h1>
-      <p className="dica">
-        A leitura do catálogo é pública. Entre para <strong>editar documentação</strong> (editor) ou{' '}
-        <strong>gerenciar parâmetros, tags e importações</strong> (administrador).
-      </p>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="cartao formulario mx-auto max-w-sm">
+        <h1>Entrar</h1>
+        <p className="dica">
+          A leitura do catálogo é pública. Entre para <strong>editar documentação</strong> (editor) ou{' '}
+          <strong>gerenciar parâmetros, tags e importações</strong> (administrador).
+        </p>
 
-      <form className="cartao formulario" onSubmit={submeter}>
-        <label className="campo">
-          <span>E-mail</span>
-          <input
-            type="email"
-            value={email}
-            onChange={(evento) => setEmail(evento.target.value)}
-            autoComplete="username"
-            required
-          />
-        </label>
-        <label className="campo">
-          <span>Senha</span>
-          <input
-            type="password"
-            value={senha}
-            onChange={(evento) => setSenha(evento.target.value)}
-            autoComplete="current-password"
-            required
-          />
-        </label>
-        {erro && <p className="erro" role="alert">{erro}</p>}
-        <button type="submit" className="botao primario" disabled={aguardando}>
-          {aguardando ? 'Entrando…' : 'Entrar'}
-        </button>
-      </form>
+        <form onSubmit={submeter}>
+          <label className="campo">
+            <span>E-mail</span>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              autoComplete="username"
+              required
+            />
+          </label>
+          <label className="campo">
+            <span>Senha</span>
+            <input
+              type="password"
+              value={senha}
+              onChange={e => setSenha(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </label>
+          {erro && <p className="erro" role="alert">{erro}</p>}
+          <button type="submit" className="botao primario" disabled={aguardando}>
+            {aguardando ? 'Entrando…' : 'Entrar'}
+          </button>
+        </form>
 
-      <p className="dica">
-        As contas são criadas pelo administrador no painel do Supabase (Authentication → Users). O
-        primeiro administrador é promovido via SQL — veja o passo a passo no README.
-      </p>
+        <p className="dica">
+          As contas são criadas pelo administrador no painel do Supabase (Authentication → Users). O
+          primeiro administrador é promovido via SQL — veja o passo a passo no README.
+        </p>
+      </div>
     </div>
   );
 }
