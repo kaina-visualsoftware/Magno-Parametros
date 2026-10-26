@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+  <!-- Background -->
+  <rect width="800" height="500" fill="#0b0d10"/>
+  <!-- Header bar -->
+  <rect y="0" width="800" height="50" fill="#1a1c22"/>
+  <!-- Logo placeholder -->
+  <circle cx="30" cy="25" r="12" fill="#6cd7bb"/>
+  <text x="55" y="32" font-family="Arial,Helvetica,sans-serif" font-size="20" fill="#e0e0e0">MyCommerce</text>
+  <!-- Detail view header -->
+  <rect x="200" y="70" width="400" height="30" fill="#303945"/>
+  <text x="210" y="90" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#a3adb9">Detalhes do parâmetro</text>
+  <!-- Content area -->
+  <rect y="100" width="800" height="350" fill="#1a1c22"/>
+  <text x="400" y="275" font-family="Arial,Helvetica,sans-serif" font-size="24" fill="#6cd7bb" text-anchor="middle">[Mock UI de detalhes]</text>
+  <!-- Footer accent line -->
+  <rect y="495" width="800" height="5" fill="#6cd7bb"/>
+</svg>

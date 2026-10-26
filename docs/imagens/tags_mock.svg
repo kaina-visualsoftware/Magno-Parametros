@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+  <!-- Background -->
+  <rect width="800" height="500" fill="#0b0d10"/>
+  <!-- Header bar -->
+  <rect y="0" width="800" height="50" fill="#1a1c22"/>
+  <!-- Logo placeholder -->
+  <circle cx="30" cy="25" r="12" fill="#6cd7bb"/>
+  <text x="55" y="32" font-family="Arial,Helvetica,sans-serif" font-size="20" fill="#e0e0e0">MyCommerce</text>
+  <!-- Tag management area -->
+  <rect y="70" width="800" height="60" fill="#303945"/>
+  <text x="400" y="105" font-family="Arial,Helvetica,sans-serif" font-size="18" fill="#a3adb9" text-anchor="middle">Gerenciamento de Tags</text>
+  <!-- Tag list mock -->
+  <g transform="translate(100,150)">
+    <!-- Tag 1 -->
+    <rect width="150" height="30" rx="5" ry="5" fill="#1a1c22"/>
+    <text x="10" y="20" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#e0e0e0">Orçamento</text>
+    <!-- Tag 2 -->
+    <rect y="40" width="150" height="30" rx="5" ry="5" fill="#1a1c22"/>
+    <text x="10" y="60" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#e0e0e0">Financeiro</text>
+    <!-- Tag 3 -->
+    <rect y="80" width="150" height="30" rx="5" ry="5" fill="#1a1c22"/>
+    <text x="10" y="100" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#e0e0e0">Inventário</text>
+  </g>
+  <!-- Footer accent line -->
+  <rect y="495" width="800" height="5" fill="#6cd7bb"/>
+</svg>

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+  <!-- Background -->
+  <rect width="800" height="500" fill="#0b0d10"/>
+  <!-- Header bar -->
+  <rect y="0" width="800" height="50" fill="#1a1c22"/>
+  <!-- Logo placeholder -->
+  <circle cx="30" cy="25" r="12" fill="#6cd7bb"/>
+  <text x="55" y="32" font-family="Arial,Helvetica,sans-serif" font-size="20" fill="#e0e0e0">MyCommerce</text>
+  <!-- Search bar -->
+  <rect x="250" y="10" width="300" height="30" rx="5" ry="5" fill="#303945"/>
+  <text x="260" y="30" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#a3adb9">Buscar parâmetros...</text>
+  <!-- Table header -->
+  <rect y="70" width="800" height="30" fill="#1a1c22"/>
+  <text x="20" y="92" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#e0e0e0">Nome</text>
+  <text x="300" y="92" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#e0e0e0">Grupo</text>
+  <text x="500" y="92" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#e0e0e0">Tipo</text>
+  <!-- Row example 1 -->
+  <rect y="100" width="800" height="30" fill="#0b0d10"/>
+  <text x="20" y="122" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#a3adb9">Parâmetro 1</text>
+  <text x="300" y="122" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#a3adb9">Grupo A</text>
+  <text x="500" y="122" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#a3adb9">Texto</text>
+  <!-- Row example 2 -->
+  <rect y="130" width="800" height="30" fill="#1a1c22"/>
+  <text x="20" y="152" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#e0e0e0">Parâmetro 2</text>
+  <text x="300" y="152" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#e0e0e0">Grupo B</text>
+  <text x="500" y="152" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#e0e0e0">Número</text>
+  <!-- Footer accent line -->
+  <rect y="495" width="800" height="5" fill="#6cd7bb"/>
+</svg>
