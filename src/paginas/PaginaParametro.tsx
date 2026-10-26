@@ -31,6 +31,13 @@ export default function PaginaParametro() {
 const { usuario, papel } = useAutenticacao();
   const podeEditar = podeEditarDocumentacao(papel);
 
+  // Se o usuário está logado mas ainda não temos o papel (a consulta ao profile pode estar em andamento),
+  // exibimos um aviso de carregamento ao invés de desabilitar tudo silenciosamente.
+  if (usuario && papel === null) {
+    return <Carregando />;
+  }
+
+
   const admin = ehAdministrador(papel);
   const consulta = useQueryClient();
 

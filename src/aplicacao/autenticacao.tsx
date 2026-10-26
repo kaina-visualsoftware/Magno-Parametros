@@ -80,7 +80,7 @@ export function ProvedorAutenticacao({ children }: { children: ReactNode }) {
           let papelUsuario: Papel | null = null;
           if (!error && data?.papel) {
             papelUsuario = data.papel as Papel;
-          } else if (sessao?.user?.email?.includes('admin')) {
+          } else if (usuario?.email?.includes('admin')) {
             // Fallback: usuário com email contendo "admin" recebe permissões de administrador
             papelUsuario = 'administrador';
           } else {
