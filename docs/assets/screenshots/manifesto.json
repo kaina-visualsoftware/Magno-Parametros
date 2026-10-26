@@ -1,0 +1,72 @@
+{
+  "capturadoEm": "2026-10-26T02:24:47.243Z",
+  "origem": "Site público, sessão anônima, dados reais; sem mocks ou edições no conteúdo.",
+  "navegador": "Chromium 156.0.8078.4",
+  "capturas": [
+    {
+      "arquivo": "screenshots/catalogo-escuro.png",
+      "largura": 1440,
+      "altura": 960,
+      "bytes": 96621,
+      "sha256": "3402a1c2b8e2e24b43f8639a233457ab7753986376532655f5e478e4dc1db87a",
+      "url": "https://kaina-visualsoftware.github.io/Myc.config/",
+      "tema": "escuro",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
+    },
+    {
+      "arquivo": "screenshots/catalogo-claro.png",
+      "largura": 1440,
+      "altura": 960,
+      "bytes": 97367,
+      "sha256": "af923e1e456b738b19611ebbe24083e53d0ead4adefc7b72ea6885c6e78a6c40",
+      "url": "https://kaina-visualsoftware.github.io/Myc.config/",
+      "tema": "claro",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
+    },
+    {
+      "arquivo": "screenshots/parametro-claro.png",
+      "largura": 1440,
+      "altura": 960,
+      "bytes": 79216,
+      "sha256": "7678035deb52acfc3946fa05ed2bdb977095360961915c2a6c1db83c50d17e4c",
+      "url": "https://kaina-visualsoftware.github.io/Myc.config/#/parametro/produtos_mais_desc_maximo_inicial_dos_produtos",
+      "tema": "claro",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
+    },
+    {
+      "arquivo": "screenshots/filtros-escuro.png",
+      "largura": 1440,
+      "altura": 960,
+      "bytes": 158182,
+      "sha256": "04405b36329b512c47730d24b30ddb92b6637b2beb1bb1d772f4a460589be28e",
+      "url": "https://kaina-visualsoftware.github.io/Myc.config/#/",
+      "tema": "escuro",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
+    },
+    {
+      "arquivo": "screenshots/busca-mobile.png",
+      "largura": 390,
+      "altura": 844,
+      "bytes": 42703,
+      "sha256": "443cdddd7a2f319904922809984ad4b851d234d8c070dfebddd5ea8e35394b58",
+      "url": "https://kaina-visualsoftware.github.io/Myc.config/#/?q=estoque",
+      "tema": "claro",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  ]
+}
