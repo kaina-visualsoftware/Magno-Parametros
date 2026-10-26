@@ -1,5 +1,8 @@
 # MyCommerce – Catálogo de Parâmetros
 
+![MyCommerce – Catálogo de Parâmetros](docs/banner.svg)
+
+
 **Visão geral**
 
 O *MyCommerce Parametros* é um catálogo online que reúne, de forma centralizada e pesquisável, todos os parâmetros configuráveis da tela *Utilitários > Configuração > Administração do Sistema* do ERP MyCommerce. Desenvolvido com React, Vite, Supabase e Tailwind CSS, o aplicativo oferece uma interface limpa, rápida e segura para **consultar, documentar e gerenciar** esses parâmetros.
