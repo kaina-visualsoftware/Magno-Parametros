@@ -140,6 +140,10 @@ npm run build      # tsc --noEmit + build de produção
 3. **Settings → Pages → Source: GitHub Actions**.
 4. O workflow `.github/workflows/deploy.yml` publica a cada push em `main`.
 
+## Configuração de produção
+
+Ao implantar a aplicação em um domínio diferente (por exemplo, GitHub Pages), adicione o URL da sua aplicação à lista **Redirect URLs** e **Site URL** nas configurações do Supabase Auth (Dashboard → Authentication → Settings). Caso contrário, as requisições de login sofrerão erro CORS como o apresentado.
+
 ## Segurança
 
 - Documentação usa RPC com autorização, versão e auditoria atômica. Editores não
