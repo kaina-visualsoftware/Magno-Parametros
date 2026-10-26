@@ -25,7 +25,7 @@ export default function PaginaEntrar() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="pagina-formulario">
       <h1>Entrar</h1>
       <p className="dica">
         A leitura do catálogo é pública. Entre para <strong>editar documentação</strong> (editor) ou{' '}
@@ -53,7 +53,7 @@ export default function PaginaEntrar() {
             required
           />
         </label>
-        {erro && <p className="erro">{erro}</p>}
+        {erro && <p className="erro" role="alert">{erro}</p>}
         <button type="submit" className="botao primario" disabled={aguardando}>
           {aguardando ? 'Entrando…' : 'Entrar'}
         </button>
