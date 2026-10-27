@@ -4,7 +4,7 @@
  * O navegador fala com este Worker (origem do GitHub Pages) e o Worker fala
  * com o Supabase. Assim o CORS é controlado aqui, sem depender da configuração
  * do projeto Supabase. A chave publishable continua vindo do cliente; o Worker
- * não armazena segredos.
+ * guarda apenas o token de Issues como secret do Cloudflare (nunca exposto ao navegador).
  */
 
 export interface Env {
