@@ -62,6 +62,7 @@ describe('Comparador de importação (idempotência)', () => {
       ativo: true,
       caminho: 'Utilitários > Configuração > Parâmetro Teste',
       imagemOrigem: null,
+      imagemPersonalizadaPath: null,
       imagemMarcada: false,
       textoBusca: 'parametro teste',
     };
