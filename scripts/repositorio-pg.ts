@@ -39,6 +39,7 @@ export function criarRepositoriosPg(pool: Pool): PortasImportacao {
       ativo: linha.ativo !== false,
       caminho: String(linha.caminho ?? ''),
       imagemOrigem: (linha.imagem_origem as string | null) ?? null,
+      imagemPersonalizadaPath: (linha.imagem_personalizada_path as string | null) ?? null,
       imagemMarcada: Boolean(linha.imagem_marcada),
       textoBusca: String(linha.texto_busca ?? ''),
     };
