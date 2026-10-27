@@ -60,6 +60,8 @@ export interface Parametro {
   /** Caminho completo derivado da árvore (Tela > Aba > ... > Parâmetro) — nunca digitado. */
   caminho: string;
   imagemOrigem: string | null;
+  /** Recorte enviado pelo administrador; prevalece sobre o OCR. */
+  imagemPersonalizadaPath: string | null;
   /** Verdadeiro quando o recorte com destaque (retângulo vermelho) já foi gerado. */
   imagemMarcada: boolean;
   /** Texto normalizado (sem acentos, minúsculo) usado pela busca. */
