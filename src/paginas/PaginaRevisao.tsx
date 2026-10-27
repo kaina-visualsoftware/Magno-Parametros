@@ -121,7 +121,7 @@ export default function PaginaRevisao() {
     </form>
     {resultadoLote && <p role="status" className="mensagem-sucesso">{resultadoLote}</p>}
     {ultimoLote.length>0 && <button type="button" className="botao fantasma mb-4"
-      onClick={()=>baixarArquivo('resultado-lote.csv',relatorioLoteCsv(ultimoLote),'text/csv;charset=utf-8')}>Baixar resultado do lote (CSV)</button>
+      onClick={()=>baixarArquivo('resultado-lote.csv',relatorioLoteCsv(ultimoLote),'text/csv;charset=utf-8'))}>Baixar resultado do lote (CSV)</button>}
     {errosLote.length>0 && <div className="erro" role="alert"><strong>Itens não atualizados:</strong><ul>{errosLote.map(x=><li key={x}>{x}</li>)}</ul></div>}
     {lote.error && <p className="erro" role="alert">{lote.error.message}</p>}
     {query.error && <ErroCarregamento erro={query.error} aoTentarNovamente={()=>void query.refetch()}/>}
