@@ -14,7 +14,7 @@ async function principal(): Promise<void> {
     console.error('Defina DATABASE_URL no .env.');
     process.exit(1);
   }
-  const cliente = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  const cliente = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: true } });
   await cliente.connect();
 
   const tabelas = await cliente.query<{ table_name: string }>(
@@ -30,10 +30,6 @@ async function principal(): Promise<void> {
   );
   for (const u of usuarios.rows) console.log(`Usuário: ${u.email} · papel: ${u.papel}`);
 
-  const senhaOk = await cliente.query<{ ok: boolean }>(
-    "select (encrypted_password = crypt('mago', encrypted_password)) as ok from auth.users where email = 'admin@magno.com.br'",
-  );
-  console.log('Senha "mago" válida para admin@magno.com.br:', senhaOk.rows[0]?.ok === true);
 
   const contagens = await cliente.query<{ tela: string; parametros: string }>(
     `select t.nome as tela, count(p.id)::text as parametros
