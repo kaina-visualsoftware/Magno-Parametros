@@ -284,3 +284,20 @@ body {
   .detalhe-tecnico .definicoes { grid-template-columns: minmax(0, 95px) minmax(0, 1fr); }
   .detalhe-lateral .imagem-destacada { max-height: 185px; }
 }
+
+/* Visualizador de imagem do parâmetro — modal nativo, sem sair do catálogo. */
+.visualizador-miniatura { position: relative; display: block; max-width: 100%; padding: 0; border: 0; background: transparent; cursor: zoom-in; text-align: left; border-radius: .5rem; }
+.visualizador-miniatura .imagem-destacada { display: block; max-width: 100%; height: auto; }
+.visualizador-miniatura:focus-visible { outline: 2px solid var(--acento); outline-offset: 4px; }
+.visualizador-indicador { position: absolute; right: .5rem; bottom: .5rem; display: inline-flex; align-items: center; gap: .35rem; padding: .35rem .55rem; border-radius: .45rem; background: rgba(8,13,18,.85); color: #fff; font-size: .75rem; font-weight: 600; }
+.visualizador-dialogo { position: fixed; inset: 0; margin: auto; padding: 0; width: min(96vw, 1440px); max-width: 96vw; max-height: 96dvh; color: var(--tinta); background: var(--superficie); border: 1px solid var(--linha); border-radius: 1rem; box-shadow: 0 20px 90px #0008; }
+.visualizador-dialogo::backdrop { background: rgba(0,0,0,.78); }
+.visualizador-painel { display: flex; flex-direction: column; max-height: 95dvh; min-height: 0; }
+.visualizador-barra { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .5rem; padding: .5rem .75rem; border-bottom: 1px solid var(--linha); }
+.visualizador-controles { display: flex; align-items: center; gap: .15rem; }
+.visualizador-percentual { display: inline-block; width: 3.3rem; font-size: .8rem; text-align: center; font-variant-numeric: tabular-nums; }
+.visualizador-area { display: flex; min-height: 180px; height: min(72dvh, 850px); max-height: 72dvh; overflow: auto; align-items: flex-start; justify-content: flex-start; overscroll-behavior: contain; background: var(--fundo); cursor: default; }
+.visualizador-area:has(img[style*="125%"]), .visualizador-area:has(img[style*="150%"]), .visualizador-area:has(img[style*="175%"]), .visualizador-area:has(img[style*="200%"]), .visualizador-area:has(img[style*="225%"]), .visualizador-area:has(img[style*="250%"]), .visualizador-area:has(img[style*="275%"]), .visualizador-area:has(img[style*="300%"]), .visualizador-area:has(img[style*="325%"]), .visualizador-area:has(img[style*="350%"]), .visualizador-area:has(img[style*="375%"]), .visualizador-area:has(img[style*="400%"]) { cursor: grab; }
+.visualizador-area img { display: block; flex: none; user-select: none; -webkit-user-drag: none; object-fit: contain; }
+.visualizador-ajuda { margin: 0; padding: .55rem .8rem; color: var(--suave); font-size: .76rem; }
+@media (max-width: 639px) { .visualizador-dialogo { width: 98vw; max-width: 98vw; } .visualizador-barra { padding: .4rem; } .visualizador-ajuda { font-size: .7rem; } .visualizador-area { max-height: 69dvh; height: 69dvh; } }
