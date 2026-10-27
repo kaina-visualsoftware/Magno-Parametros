@@ -29,6 +29,7 @@ export function Cabecalho() {
         <button type="button" className="botao-icone" title="Reportar problema ou sugerir parâmetro" onClick={() => { setReportarAberto(true); setAberto(false); }}><Bug size={17} aria-hidden /><span className="text-sm hidden sm:inline">Reportar</span></button>
         {usuario ? (
           <>
+            <span className="text-xs text-suave px-2" title="Permissões registradas no Supabase">Papel: {papel ?? 'carregando…'}</span>
             <button
               className="botao-icone"
               title={usuario.email}
