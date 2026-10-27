@@ -5,8 +5,8 @@ Alternativa para redes/navegadores que bloqueiam chamadas diretas ao
 repassa `/rest/v1/*` e `/auth/v1/*` ao Supabase e devolve os headers CORS
 para a origem do catálogo.
 
-O Worker **não armazena segredos**. A chave publishable continua sendo enviada
-pelo cliente e repassada ao Supabase. O RLS continua protegendo os dados.
+O proxy de Supabase não usa segredos: a chave publishable continua sendo enviada
+pelo cliente e repassada ao Supabase. O RLS continua protegendo os dados.\nO endpoint de sugestões usa um segredo GitHub exclusivo do Worker (veja abaixo).
 
 ## Pré-requisitos
 
@@ -76,3 +76,35 @@ curl -i -X OPTIONS \
   -H 'Access-Control-Request-Method: GET' \
   https://SEU-WORKER.workers.dev/rest/v1/parametros
 ```
+
+
+## Enviar sugestões como Issues (sem login GitHub)
+
+O Worker também disponibiliza `POST /api/sugestoes`, acessível somente pelo
+formulário na origem definida em `ALLOWED_ORIGINS`. Recebe JSON
+`{ "descricao": "texto com pelo menos 10 caracteres", "parametro": "referência opcional" }`.
+Retorna status `201` e a URL real da issue quando o GitHub confirmar a criação.
+
+**Configuração obrigatória no Cloudflare (no diretório `worker/`):**
+
+1. Crie um token **fine-grained** no GitHub, limitado somente ao repositório
+   `kaina-visualsoftware/Myc.config`, com permissão **Issues: Read and write**.
+   Não conceda Contents ou permissões de organização. O token deve ser guardado
+   somente como segredo do Worker, nunca em `VITE_*` ou `wrangler.toml`.
+2. Execute `npx wrangler secret put GITHUB_ISSUES_TOKEN` e cole o valor quando solicitado.
+3. Execute `npx wrangler deploy` para publicar o endpoint atualizado.
+4. No repositório GitHub, acesse **Settings → Secrets and variables → Actions → Variables**
+   e defina `VITE_ISSUES_API_URL` com a URL base do Worker, como
+   `https://magno-parametros-proxy.SEU-SUBDOMINIO.workers.dev`.
+   Se `VITE_SUPABASE_URL` já aponta para esse Worker, a configuração extra é opcional.
+5. Publique novamente o GitHub Pages após atualizar a variável.
+
+O Worker usa um binding Cloudflare de **3 envios por minuto por IP e localização**,
+valida corpo e tamanhos, rejeita origens de outros sites e usa um honeypot.
+O limite do Cloudflare é regional e não é uma proteção global infalível; monitore
+as Issues, configure regras de segurança adicionais (como Turnstile/WAF) se
+houver abuso, e ajuste os limites antes de ampliar o tráfego.
+
+Sem o segredo ou o binding, o endpoint responde `503` e não cria issues;
+nenhum token é incluído na resposta. O Worker atual precisa ser redeployado:
+apenas alterar o frontend no GitHub Pages não ativa a integração.

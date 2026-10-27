@@ -8,79 +8,98 @@ interface ReportarProblemaProps {
   usuario?: string;
 }
 
-export function ReportarProblema({ fechar, usuario }: ReportarProblemaProps) {
+interface RespostaSugestao {
+  url?: string;
+  error?: string;
+}
+
+function urlApi(): string | null {
+  const configurada = import.meta.env.VITE_ISSUES_API_URL as string | undefined;
+  const base = configurada || import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  if (!base) return null;
+  try {
+    const url = new URL(base);
+    // Não envie sugestões para o endpoint do Supabase: só o Worker possui o token.
+    if (url.protocol !== 'https:' || url.hostname.endsWith('.supabase.co')) return null;
+    return new URL('/api/sugestoes', url).toString();
+  } catch {
+    return null;
+  }
+}
+
+export function ReportarProblema({ fechar }: ReportarProblemaProps) {
   const [descricao, setDescricao] = useState('');
-  const [urlParametro, setUrlParametro] = useState('');
+  const [parametro, setParametro] = useState('');
+  const [site, setSite] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState('');
+  const [issue, setIssue] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    const titulo = urlParametro
-      ? `Sugestão de parâmetro: ${urlParametro}`
-      : 'Sugestão de parâmetro ou correção';
-
-    const corpo = [
-      `**Descrição:** ${descricao}`,
-      '',
-      usuario ? `**Usuário:** ${usuario}` : '',
-      urlParametro ? `**URL do parâmetro:** ${urlParametro}` : '',
-      '',
-      '---',
-      '',
-      'Este é um relatório enviado pelo catálogo de parâmetros do MyCommerce.',
-    ].filter(Boolean).join('\n');
-
-    const url = new URL('https://github.com/kaina-visualsoftware/Myc.config/issues/new');
-    url.searchParams.set('title', titulo);
-    url.searchParams.set('body', corpo);
-    window.open(url.toString(), '_blank', 'noopener,noreferrer');
-    fechar();
-  };
+    if (enviando) return;
+    setErro('');
+    const endpoint = urlApi();
+    if (!endpoint) {
+      setErro('Envio automático ainda não configurado. Contate a administração do catálogo.');
+      return;
+    }
+    setEnviando(true);
+    try {
+      const resposta = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ descricao: descricao.trim(), parametro: parametro.trim(), site }),
+      });
+      const dados = await resposta.json() as RespostaSugestao;
+      if (!resposta.ok || !dados.url) {
+        throw new Error(dados.error || 'Não foi possível registrar a sugestão.');
+      }
+      setIssue(dados.url);
+      setDescricao('');
+      setParametro('');
+    } catch (causa) {
+      setErro(causa instanceof Error ? causa.message : 'Falha de conexão. Tente novamente.');
+    } finally {
+      setEnviando(false);
+    }
+  }
 
   return (
     <Dialogo titulo="Reportar problema ou sugerir parâmetro" fechar={fechar}>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <p className="dica">
-          Use este botão para solicitar a adição de novos parâmetros ou para corrigir parâmetros existentes que estão incorretos ou incompletos.
-        </p>
-
-        <div className="campo">
-          <label htmlFor="descricao">Descrição do problema ou sugestão *</label>
-          <textarea
-            id="descricao"
-            required
-            rows={4}
-            placeholder="Descreva o parâmetro, o problema encontrado ou a sugestão..."
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            className="min-h-[100px]"
-          />
+      {issue ? (
+        <div role="status" className="flex flex-col gap-4">
+          <p className="mensagem-sucesso">Sua sugestão foi registrada no GitHub com sucesso.</p>
+          <a href={issue} target="_blank" rel="noopener noreferrer">Ver issue criada no GitHub</a>
+          <button className="botao" type="button" onClick={fechar}>Fechar</button>
         </div>
-
-        <div className="campo">
-          <label htmlFor="url-parametro">URL do parâmetro (opcional)</label>
-          <input
-            id="url-parametro"
-            type="text"
-            placeholder="Ex: MyCommerce > Financeiro > Configuração > Orçamento"
-            value={urlParametro}
-            onChange={(e) => setUrlParametro(e.target.value)}
-          />
-        </div>
-
-        <div className="flex justify-end gap-2 mt-2">
-          <button type="button" className="botao fantasma" onClick={fechar}>
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={!descricao.trim()}
-            className="botao"
-          >
-            <><Bug size={16} aria-hidden /> Abrir issue no GitHub</>
-          </button>
-        </div>
-      </form>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <p className="dica">Envie correções ou sugestões diretamente, sem precisar de uma conta no GitHub.</p>
+          <label className="campo">
+            <span>Descrição do problema ou sugestão *</span>
+            <textarea required minLength={10} maxLength={4000} rows={4}
+              placeholder="Descreva o parâmetro, o problema encontrado ou a sugestão..."
+              value={descricao} onChange={e => setDescricao(e.target.value)} />
+          </label>
+          <label className="campo">
+            <span>URL ou caminho do parâmetro (opcional)</span>
+            <input type="text" maxLength={400} value={parametro}
+              placeholder="MyCommerce > Financeiro > Configuração..."
+              onChange={e => setParametro(e.target.value)} />
+          </label>
+          <label className="sr-only" aria-hidden="true">Deixe este campo vazio
+            <input tabIndex={-1} autoComplete="off" value={site} onChange={e => setSite(e.target.value)} />
+          </label>
+          {erro && <p className="erro" role="alert">{erro}</p>}
+          <div className="flex justify-end gap-2 mt-2">
+            <button type="button" className="botao fantasma" onClick={fechar} disabled={enviando}>Cancelar</button>
+            <button type="submit" disabled={enviando || descricao.trim().length < 10} className="botao">
+              <Bug size={16} aria-hidden /> {enviando ? 'Enviando…' : 'Enviar sugestão'}
+            </button>
+          </div>
+        </form>
+      )}
     </Dialogo>
   );
 }

@@ -132,3 +132,87 @@ describe('Proxy Cloudflare Worker', () => {
     expect(upstream).not.toHaveBeenCalled();
   });
 });
+
+
+describe('Criação de sugestões pelo Worker', () => {
+  const envSugestoes: Env = {
+    ...env,
+    GITHUB_ISSUES_TOKEN: 'token-apenas-no-worker',
+    ISSUE_LIMITER: { limit: vi.fn().mockResolvedValue({ success: true }) },
+  };
+  function pedido(dados: Record<string, unknown>, origemPedido: string = origem): Request {
+    return requisicao('/api/sugestoes', {
+      method: 'POST',
+      headers: {
+        Origin: origemPedido,
+        'CF-Connecting-IP': '203.0.113.4',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(dados),
+    });
+  }
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('cria issue sem expor token e retorna link verificado', async () => {
+    const upstream = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      html_url: 'https://github.com/kaina-visualsoftware/Myc.config/issues/123',
+    }), { status: 201, headers: { 'Content-Type': 'application/json' } }));
+    vi.stubGlobal('fetch', upstream);
+    const resposta = await processarRequisicao(pedido({
+      descricao: 'Ajustar descrição do parâmetro no catálogo.',
+      parametro: 'Produtos > Descontos',
+    }), envSugestoes);
+    expect(resposta.status).toBe(201);
+    expect(await resposta.json()).toEqual({ url: 'https://github.com/kaina-visualsoftware/Myc.config/issues/123' });
+    expect(resposta.headers.get('Access-Control-Allow-Origin')).toBe(origem);
+    const [url, init] = upstream.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://api.github.com/repos/kaina-visualsoftware/Myc.config/issues');
+    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer token-apenas-no-worker');
+    const corpo = JSON.parse(String(init.body));
+    expect(corpo.body).toContain('Ajustar descrição');
+    expect(corpo.body).toContain('Produtos > Descontos');
+    expect(JSON.stringify({ url: 'https://github.com/kaina-visualsoftware/Myc.config/issues/123' })).not.toContain('token-apenas-no-worker');
+  });
+
+  it('bloqueia origem desconhecida antes de chamar GitHub', async () => {
+    const upstream = vi.fn();
+    vi.stubGlobal('fetch', upstream);
+    const resposta = await processarRequisicao(pedido({ descricao: 'Teste de origem inválida.' }, 'https://invasor.example'), envSugestoes);
+    expect(resposta.status).toBe(403);
+    expect(upstream).not.toHaveBeenCalled();
+  });
+
+  it('rejeita descrição vazia e JSON inválido', async () => {
+    const upstream = vi.fn();
+    vi.stubGlobal('fetch', upstream);
+    expect((await processarRequisicao(pedido({ descricao: 'curto' }), envSugestoes)).status).toBe(400);
+    const req = requisicao('/api/sugestoes', {
+      method: 'POST',
+      headers: { Origin: origem, 'CF-Connecting-IP': '203.0.113.4', 'Content-Type': 'application/json' },
+      body: '{',
+    });
+    expect((await processarRequisicao(req, envSugestoes)).status).toBe(400);
+    expect(upstream).not.toHaveBeenCalled();
+  });
+
+  it('retorna 429 ao atingir o limite', async () => {
+    const upstream = vi.fn();
+    vi.stubGlobal('fetch', upstream);
+    const resposta = await processarRequisicao(pedido({ descricao: 'Solicitação válida para limite.' }),
+      { ...envSugestoes, ISSUE_LIMITER: { limit: async () => ({ success: false }) } });
+    expect(resposta.status).toBe(429);
+    expect(upstream).not.toHaveBeenCalled();
+  });
+
+  it('não registra sucesso em falha do GitHub', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('erro', { status: 401 })));
+    const resposta = await processarRequisicao(pedido({ descricao: 'Solicitação válida para falha.' }), envSugestoes);
+    expect(resposta.status).toBe(502);
+    expect((await resposta.json()) as { url?: string }).not.toHaveProperty('url');
+  });
+
+  it('recusa envio sem configuração de token e rate limit', async () => {
+    const resposta = await processarRequisicao(pedido({ descricao: 'Solicitação válida mas sem configuração.' }), env);
+    expect(resposta.status).toBe(503);
+  });
+});
