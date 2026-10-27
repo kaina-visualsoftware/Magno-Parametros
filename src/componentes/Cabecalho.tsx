@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { BookOpen, Bug, LogIn, LogOut, Menu, X } from 'lucide-react';
+import { Bug, LogIn, LogOut, Menu, X } from 'lucide-react';
 import { useAutenticacao } from '../aplicacao/autenticacao';
 import { AlternadorTema } from './AlternadorTema';
 import { ReportarProblema } from './ReportarProblema';
@@ -16,7 +16,7 @@ export function Cabecalho() {
   return <header className="border-b border-linha bg-fundo/95">
     <div className="max-w-7xl 3xl:max-w-[1440px] mx-auto flex flex-wrap items-center gap-2 sm:gap-4 px-3 sm:px-6 lg:px-10 py-4">
       <Link to="/" className="flex items-center gap-2 sm:gap-3 !text-tinta mr-auto" aria-label="MyCommerce, catálogo de parâmetros">
-        <span className="bg-elevada border border-linha rounded-xl p-2.5"><BookOpen size={22} aria-hidden className="text-acento" /></span>
+        <img src={`${import.meta.env.BASE_URL}app-icon.svg`} width={40} height={40} alt="" aria-hidden="true" className="rounded-xl shrink-0" />
         <span className="flex flex-col leading-tight"><strong className="text-base tracking-tight">MyCommerce</strong><span className="hidden min-[360px]:block text-xs text-suave mt-1">Referência de parâmetros</span></span>
       </Link>
       <AlternadorTema />
