@@ -31,6 +31,13 @@ jobs:
         run: |
           test -n "$VITE_SUPABASE_URL" || { echo "::error::Defina VITE_SUPABASE_URL nos secrets."; exit 1; }
           test -n "$VITE_SUPABASE_ANON_KEY" || { echo "::error::Defina VITE_SUPABASE_ANON_KEY nos secrets."; exit 1; }
+      - name: Avisar quando o envio automático de sugestões não estiver configurado
+        env:
+          VITE_ISSUES_API_URL: ${{ vars.VITE_ISSUES_API_URL }}
+        run: |
+          if [ -z "$VITE_ISSUES_API_URL" ]; then
+            echo "::warning::VITE_ISSUES_API_URL não configurada. A interface oferecerá criação manual da issue no GitHub."
+          fi
       - name: Testes unitários do domínio
         run: npm test
       - name: Build de produção
