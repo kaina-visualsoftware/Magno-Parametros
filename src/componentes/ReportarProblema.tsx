@@ -39,7 +39,7 @@ export function construirUrlIssue(descricao: string, parametro: string): string 
     '',
     '---',
     'Enviado pelo catálogo público de parâmetros do MyCommerce.',
-  ].filter(Boolean).join('\\n'));
+  ].filter(Boolean).join('\n'));
   return url.toString();
 }
 
