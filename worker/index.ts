@@ -10,6 +10,8 @@
 export interface Env {
   SUPABASE_URL: string;
   ALLOWED_ORIGINS: string;
+  GITHUB_ISSUES_TOKEN?: string;
+  ISSUE_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
 }
 
 const CAMINHOS_PERMITIDOS = ['/rest/v1', '/auth/v1'];
@@ -86,6 +88,85 @@ function validarSupabaseUrl(valor: string): URL | null {
   }
 }
 
+
+/** Endpoint de escrita: somente servidor possui o token do GitHub. */
+async function criarSugestao(request: Request, env: Env, origem: string | null): Promise<Response> {
+  const cors = origem ? cabecalhosCors(origem, request) : undefined;
+  if (!origem || !origemPermitida(origem, env)) return respostaJson({ error: 'Origem não permitida' }, 403);
+  if (request.method !== 'POST') return respostaJson({ error: 'Método não permitido' }, 405, cors);
+  if (!env.GITHUB_ISSUES_TOKEN || !env.ISSUE_LIMITER) {
+    return respostaJson({ error: 'Serviço de sugestões não configurado' }, 503, cors);
+  }
+  if (!request.headers.get('content-type')?.toLowerCase().startsWith('application/json')) {
+    return respostaJson({ error: 'Envie JSON' }, 415, cors);
+  }
+  const tamanho = Number(request.headers.get('content-length') ?? 0);
+  if (tamanho > 10_000) return respostaJson({ error: 'Solicitação muito grande' }, 413, cors);
+  let dados: Record<string, unknown>;
+  try {
+    const texto = await request.text();
+    if (texto.length > 10_000) return respostaJson({ error: 'Solicitação muito grande' }, 413, cors);
+    const convertido: unknown = JSON.parse(texto);
+    if (!convertido || typeof convertido !== 'object' || Array.isArray(convertido)) throw new Error();
+    dados = convertido as Record<string, unknown>;
+  } catch {
+    return respostaJson({ error: 'JSON inválido' }, 400, cors);
+  }
+  if (typeof dados.descricao !== 'string' || dados.descricao.trim().length < 10 ||
+      dados.descricao.length > 4000 || (dados.parametro !== undefined &&
+      (typeof dados.parametro !== 'string' || dados.parametro.length > 400))) {
+    return respostaJson({ error: 'Informe uma descrição de 10 a 4000 caracteres e uma referência de até 400 caracteres' }, 400, cors);
+  }
+  // Campo oculto (honeypot) evita bots básicos, sem constranger visitantes legítimos.
+  if (dados.site !== undefined && dados.site !== '') {
+    return respostaJson({ error: 'Solicitação inválida' }, 400, cors);
+  }
+  const ip = request.headers.get('CF-Connecting-IP');
+  // Sem IP confiável da Cloudflare, não existe chave segura para limite por visitante.
+  if (!ip) return respostaJson({ error: 'Origem da solicitação não verificada' }, 403, cors);
+  try {
+    const limite = await env.ISSUE_LIMITER.limit({ key: ip });
+    if (!limite.success) return respostaJson({ error: 'Muitas sugestões. Tente novamente mais tarde.' }, 429, cors);
+  } catch {
+    return respostaJson({ error: 'Proteção temporariamente indisponível' }, 503, cors);
+  }
+
+  const referencia = typeof dados.parametro === 'string' ? dados.parametro.trim() : '';
+  const titulo = referencia ? `Sugestão de parâmetro: ${referencia.slice(0, 110)}` : 'Sugestão de parâmetro ou correção';
+  const corpo = [
+    '## Descrição', dados.descricao.trim(), '',
+    referencia ? `**Referência do parâmetro:** ${referencia}` : '',
+    '', '---', 'Enviado pelo catálogo público de parâmetros do MyCommerce.',
+  ].filter(Boolean).join('\\n');
+
+  try {
+    const resposta = await fetch('https://api.github.com/repos/kaina-visualsoftware/Myc.config/issues', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.GITHUB_ISSUES_TOKEN}`,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'magno-parametros-sugestoes/1.0',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+      body: JSON.stringify({ title: titulo, body: corpo }),
+    });
+    if (!resposta.ok) {
+      return respostaJson({ error: resposta.status === 401 || resposta.status === 403
+        ? 'Integração GitHub indisponível' : 'Não foi possível registrar a sugestão' }, 502, cors);
+    }
+    const issue: unknown = await resposta.json();
+    if (!issue || typeof issue !== 'object' ||
+        typeof (issue as { html_url?: unknown }).html_url !== 'string' ||
+        !/^https:\/\/github\.com\/kaina-visualsoftware\/Myc\.config\/issues\/\d+$/.test((issue as { html_url: string }).html_url)) {
+      return respostaJson({ error: 'Resposta inesperada do GitHub' }, 502, cors);
+    }
+    return respostaJson({ url: (issue as { html_url: string }).html_url }, 201, cors);
+  } catch {
+    return respostaJson({ error: 'Falha ao contatar o GitHub' }, 502, cors);
+  }
+}
+
 export async function processarRequisicao(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const origem = request.headers.get('Origin');
@@ -105,6 +186,8 @@ export async function processarRequisicao(request: Request, env: Env): Promise<R
       headers: permitida ? cabecalhosCors(origem!, request) : undefined,
     });
   }
+
+  if (url.pathname === '/api/sugestoes') return criarSugestao(request, env, origem);
 
   const caminhoPermitido = CAMINHOS_PERMITIDOS.some(
     (caminho) => url.pathname === caminho || url.pathname.startsWith(`${caminho}/`),
