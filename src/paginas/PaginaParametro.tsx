@@ -23,6 +23,7 @@ import {
 import { Parametro, StatusDocumentacao } from '../dominio/entidades';
 import { StatusParametro } from '../componentes/StatusParametro';
 import { ImagemParametro } from '../componentes/ImagemParametro';
+import { CorrespondenciaBancoParametro } from '../componentes/CorrespondenciaBancoParametro';
 
 export default function PaginaParametro() {
   const { confirmar, perguntar } = useDialogos();
@@ -176,6 +177,7 @@ export default function PaginaParametro() {
         {edicaoAtiva && <span className="text-sm text-suave">Você está no modo de edição. Salve cada seção separadamente.</span>}
       </div>}
       <ImagemParametro parametro={parametro} admin={admin && edicaoAtiva} />
+      <CorrespondenciaBancoParametro key={parametro.id} parametroId={parametro.id} />
 
       <div className="grade-detalhe">
         <section className="cartao">
