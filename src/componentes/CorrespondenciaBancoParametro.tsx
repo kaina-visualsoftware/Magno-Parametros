@@ -166,10 +166,5 @@ export function CorrespondenciaBancoParametro({ parametroId }: { parametroId: st
     </form>}
     {erroEdicao && <p className="erro" role="alert">{erroEdicao}</p>}
     {sucesso && <p className="mensagem-sucesso" role="status">{sucesso}</p>}
-    <p className="dica mt-4">
-      <strong>Atenção:</strong> correspondências estimadas por nome e contexto, sem confirmação no código-fonte ou nos dados do ERP.
-      O SELECT é somente para consulta. Os valores necessários para ativar ou desativar cada parâmetro não foram informados.
-      Faça backup e confirme o tipo e a semântica da coluna antes de qualquer UPDATE no banco do MyCommerce.
-    </p>
   </section>;
 }
