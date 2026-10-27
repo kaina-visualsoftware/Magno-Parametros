@@ -169,3 +169,20 @@ O README anterior mencionava MIT, mas este repositório não contém um arquivo 
 ---
 
 **Comece por uma configuração que você usa todos os dias.** [Abra o catálogo](https://kaina-visualsoftware.github.io/Myc.config/), encontre o parâmetro e explore seu contexto.
+
+
+## Conferir permissões de administrador
+
+A edição administrativa só é liberada quando a tabela pública `profiles` contém `papel = 'administrador'` para o ID do usuário autenticado. Fazer login não altera automaticamente o papel. A interface mostra `Papel: ...` no cabeçalho.
+
+No SQL Editor do Supabase, consulte o perfil por identificador (não pela senha):
+
+```sql
+select id, papel from public.profiles where id = '<UUID_DO_USUARIO_NO_AUTH>';
+```
+
+Para promover uma conta existente, utilize no ambiente administrativo local o script `npm run criar-admin` com `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` e `ADMIN_USER_ID`. Não use prefixo `VITE_` em segredos de servidor, não publique arquivos `.env` e nunca envie a service role ao navegador. O script valida a promoção lendo novamente o perfil.
+
+**Segurança:** versões antigas do repositório incluíam credenciais fixas no script de criação de administrador. Altere imediatamente qualquer senha exposta e revogue sessões comprometidas pelo painel do Supabase, mesmo que o arquivo atual já tenha sido corrigido. Remover o conteúdo da versão atual não apaga o histórico do Git.
+
+O JSON de origem nem sempre possui descrição: quando `descricao` é `null`, o catálogo não pode gerar um texto fiel automaticamente. A descrição pode ser escrita manualmente por editores ou administradores no campo `O que faz`.
