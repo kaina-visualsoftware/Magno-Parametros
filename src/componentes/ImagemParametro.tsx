@@ -4,6 +4,7 @@ import { ImagePlus, RotateCcw, Upload } from 'lucide-react';
 import type { Parametro } from '../dominio/entidades';
 import { obterClienteSupabase } from '../raiz-composicao';
 import { useDialogos } from './Dialogo';
+import { formatarTamanho, prepararImagem, type ImagemPreparada } from '../servicos/compressor-imagem';
 
 const BUCKET = 'imagens-parametros';
 const LIMITE = 5 * 1024 * 1024;
@@ -37,6 +38,8 @@ export function ImagemParametro({ parametro, admin }: { parametro: Parametro; ad
   const consulta = useQueryClient();
   const { confirmar } = useDialogos();
   const [arquivo, setArquivo] = useState<File | null>(null);
+  const [preparada, setPreparada] = useState<ImagemPreparada | null>(null);
+  const [comprimindo, setComprimindo] = useState(false);
   const [previa, setPrevia] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
@@ -44,11 +47,26 @@ export function ImagemParametro({ parametro, admin }: { parametro: Parametro; ad
   const [falha, setFalha] = useState(false);
 
   useEffect(() => {
-    if (!arquivo) { setPrevia(null); return; }
-    const url = URL.createObjectURL(arquivo);
+    let cancelado = false;
+    setPreparada(null);
+    setComprimindo(Boolean(arquivo));
+    if (!arquivo) return;
+    void prepararImagem(arquivo).then(resultado => {
+      if (!cancelado) { setPreparada(resultado); setErro(''); }
+    }).catch(causa => {
+      if (!cancelado) setErro(causa instanceof Error ? causa.message : 'Falha ao comprimir imagem.');
+    }).finally(() => {
+      if (!cancelado) setComprimindo(false);
+    });
+    return () => { cancelado = true; };
+  }, [arquivo]);
+
+  useEffect(() => {
+    if (!preparada) { setPrevia(null); return; }
+    const url = URL.createObjectURL(preparada.arquivo);
     setPrevia(url);
     return () => URL.revokeObjectURL(url);
-  }, [arquivo]);
+  }, [preparada]);
 
   useEffect(() => { setFalha(false); setErro(''); setMensagem(''); setArquivo(null); }, [parametro.id, parametro.imagemPersonalizadaPath]);
 
@@ -61,17 +79,18 @@ export function ImagemParametro({ parametro, admin }: { parametro: Parametro; ad
   };
 
   async function enviar() {
-    if (!arquivo || salvando || !admin) return;
+    if (!preparada || salvando || comprimindo || !admin) return;
     setErro(''); setMensagem('');
     setSalvando(true);
     let caminho: string | null = null;
     try {
-      const extensao = await validarImagem(arquivo);
+      const arquivoFinal = preparada.arquivo;
+      const extensao = await validarImagem(arquivoFinal);
       if (atual && !(await confirmar('Substituir a imagem exibida por este novo arquivo?'))) return;
       caminho = `${parametro.id}/${crypto.randomUUID()}.${extensao}`;
       const cliente = obterClienteSupabase();
       const { error: erroUpload } = await cliente.storage.from(BUCKET)
-        .upload(caminho, arquivo, { contentType: arquivo.type, upsert: false, cacheControl: '31536000' });
+        .upload(caminho, arquivoFinal, { contentType: arquivoFinal.type, upsert: false, cacheControl: '31536000' });
       if (erroUpload) throw erroUpload;
       const { error: erroRpc } = await cliente.rpc('definir_imagem_parametro', {
         p_id: parametro.id,
@@ -83,7 +102,7 @@ export function ImagemParametro({ parametro, admin }: { parametro: Parametro; ad
         throw erroRpc;
       }
       setArquivo(null);
-      setMensagem('Imagem atualizada com sucesso.');
+      setMensagem(`Imagem atualizada com sucesso: ${formatarTamanho(preparada.tamanhoOriginal)} → ${formatarTamanho(arquivoFinal.size)}.`);
       await limparConsulta();
     } catch (causa) {
       setErro(causa instanceof Error ? causa.message : 'Não foi possível enviar a imagem.');
@@ -122,17 +141,19 @@ export function ImagemParametro({ parametro, admin }: { parametro: Parametro; ad
     {admin && <div className="mt-4 flex flex-col gap-3">
       <label className="campo">
         <span><ImagePlus size={16} className="inline mr-2" aria-hidden="true" />{atual ? 'Substituir imagem' : 'Adicionar imagem'}</span>
-        <input type="file" accept="image/png,image/jpeg,image/webp" disabled={salvando}
+        <input type="file" accept="image/png,image/jpeg,image/webp" disabled={salvando || comprimindo}
           onChange={e => { setArquivo(e.target.files?.[0] ?? null); setErro(''); e.currentTarget.value = ''; }} />
       </label>
-      {previa && <img src={previa} alt="Prévia do arquivo escolhido" className="imagem-destacada" />}
+      {comprimindo && <p className="dica" role="status">Otimizando imagem no navegador…</p>}
+      {preparada && <p className="dica" role="status">Tamanho: {formatarTamanho(preparada.tamanhoOriginal)} → {formatarTamanho(preparada.arquivo.size)} {preparada.comprimida ? '(WebP otimizado)' : '(original já é menor)'}</p>}
+      {previa && <img src={previa} alt="Prévia do arquivo que será enviado" className="imagem-destacada" />}
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="botao primario" disabled={!arquivo || salvando}
+        <button type="button" className="botao primario" disabled={!preparada || salvando || comprimindo}
           onClick={() => void enviar()}><Upload size={16} aria-hidden="true" />{salvando ? 'Salvando…' : 'Salvar imagem'}</button>
         {parametro.imagemPersonalizadaPath && <button type="button" className="botao fantasma" disabled={salvando}
           onClick={() => void restaurar()}><RotateCcw size={16} aria-hidden="true" />Restaurar imagem importada</button>}
       </div>
-      <p className="dica">PNG, JPG ou WebP, até 5 MB. Envie um recorte que mostre o parâmetro correto.</p>
+      <p className="dica">PNG, JPG ou WebP de até 20 MB. O navegador comprime antes de enviar, com limite final de 5 MB. Confira se o texto segue legível.</p>
     </div>}
     {erro && <p className="erro" role="alert">{erro}</p>}
     {mensagem && <p className="mensagem-sucesso" role="status">{mensagem}</p>}
