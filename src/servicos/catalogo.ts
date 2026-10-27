@@ -130,14 +130,35 @@ export async function salvarDocumentacao(entrada: DocumentacaoParametro): Promis
  */
 export async function editarCampoOrigem(entrada: {
   id: string;
-  campo: 'nome' | 'grupo' | 'descricaoOriginal';
-  valor: string;
+  campo: 'nome' | 'grupo' | 'descricaoOriginal' | 'tipo' | 'opcoes';
+  valor: string | string[];
   usuario: string | null;
 }): Promise<Parametro> {
   const antes = await r().parametroLeitura.buscarPorId(entrada.id);
   if (!antes) throw new Error('Parâmetro não encontrado');
 
-  const depois: Parametro = { ...antes, [entrada.campo]: entrada.valor, editadoNaOrigem: true };
+  if (entrada.campo === 'opcoes' && !Array.isArray(entrada.valor)) throw new Error('Opções inválidas.');
+  if (entrada.campo !== 'opcoes' && typeof entrada.valor !== 'string') throw new Error('Valor inválido.');
+  if (typeof entrada.valor === 'string' && entrada.valor.length > 20000) throw new Error('O campo excede 20000 caracteres.');
+  if (entrada.campo !== 'descricaoOriginal' && entrada.campo !== 'opcoes' && !String(entrada.valor).trim()) {
+    throw new Error('Este campo não pode ficar vazio.');
+  }
+  if (entrada.campo === 'opcoes' && (entrada.valor as string[]).some(v => typeof v !== 'string' || !v.trim())) {
+    throw new Error('As opções não podem ficar vazias.');
+  }
+  const valor = entrada.campo === 'opcoes' ? entrada.valor as string[]
+    : entrada.campo === 'descricaoOriginal' ? (entrada.valor as string || null)
+    : (entrada.valor as string).trim();
+  if (JSON.stringify(antes[entrada.campo]) === JSON.stringify(valor)) return antes;
+  const depois: Parametro = { ...antes, [entrada.campo]: valor, editadoNaOrigem: true };
+  if (entrada.campo === 'tipo') {
+    const tipos = await r().leituraTipos.listar();
+    if (!tipos.some(t => t.codigo === depois.tipo)) {
+      await r().escritaTipos.salvarEmLote([{ codigo: depois.tipo, descricao: null, componentes: [] }]);
+    }
+  }
+  const erroOpcoes = manipuladorDoTipo(depois.tipo).validarOpcoes(depois.opcoes);
+  if (erroOpcoes) throw new Error(erroOpcoes);
   const { tela, trilha } = await obterTrilhaDaAba(depois.abaId);
   const nomesAbas = trilha.map((aba) => aba.nome);
   depois.caminho = calcularCaminhoParametro(tela?.prefixoCaminho ?? '', nomesAbas, depois.nome);
@@ -152,17 +173,12 @@ export async function editarCampoOrigem(entrada: {
   depois.textoBusca = montarTextoBusca([depois.nome, depois.descricaoOriginal, depois.oQueFaz, depois.grupo, depois.caminho]);
 
   await r().parametroEscrita.salvar(depois);
-  await r().historico.registrar([
-    {
-      entidade: 'parametro',
-      entidadeId: depois.id,
-      campo: entrada.campo,
-      valorAnterior: String(antes[entrada.campo] ?? ''),
-      valorNovo: entrada.valor,
-      usuario: entrada.usuario,
-      origem: 'edicao-origem',
-    },
-  ]);
+  await r().historico.registrar([{
+    entidade: 'parametro', entidadeId: depois.id, campo: entrada.campo,
+    valorAnterior: Array.isArray(antes[entrada.campo]) ? JSON.stringify(antes[entrada.campo]) : String(antes[entrada.campo] ?? ''),
+    valorNovo: Array.isArray(valor) ? JSON.stringify(valor) : String(valor ?? ''),
+    usuario: entrada.usuario, origem: 'edicao-origem',
+  }]);
   return depois;
 }
 

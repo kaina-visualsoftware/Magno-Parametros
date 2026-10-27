@@ -62,7 +62,7 @@ export function ProvedorDialogos({ children }: { children: ReactNode }) {
       <form onSubmit={e => { e.preventDefault(); concluir(pedido.valor === undefined ? 'sim' : texto.trim()); }}>
         <p className="whitespace-pre-line text-suave">{pedido.mensagem}</p>
         {pedido.valor !== undefined && <label className="campo"><span>Novo valor</span>
-          <input autoFocus value={texto} maxLength={20000} onChange={e => setTexto(e.target.value)} /></label>}
+          <textarea autoFocus rows={pedido.mensagem.includes("Uma opção por linha") ? 6 : 3} value={texto} maxLength={20000} onChange={e => setTexto(e.target.value)} /></label>}
         <div className="flex justify-end gap-3 mt-6"><button autoFocus={pedido.valor === undefined} type="button" className="botao fantasma" onClick={() => concluir(null)}>Cancelar</button>
           <button className="botao" type="submit">Confirmar</button></div>
       </form>
