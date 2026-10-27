@@ -90,10 +90,8 @@ export function ProvedorAutenticacao({ children }: { children: ReactNode }) {
   }, [usuario]);
 
   async function entrar(email: string, senha: string): Promise<void> {
-    console.log('Tentando autenticar com:', email); // Adicione este log
     const { error } = await obterClienteSupabase().auth.signInWithPassword({ email, password: senha });
     if (error) {
-      console.error('Erro de autenticação:', error); // Adicione este log
       throw error;
     }
   }

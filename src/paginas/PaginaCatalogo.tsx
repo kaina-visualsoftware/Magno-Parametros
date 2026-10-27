@@ -79,7 +79,7 @@ export default function PaginaCatalogo({ tagFixa, titulo }: { tagFixa?: string; 
     <div className="flex flex-wrap items-start justify-between gap-4 mb-8 md:mb-10">
       <div><h1 id="titulo-catalogo" className="!mb-3">{titulo ?? 'Cada configuração, no seu lugar.'}</h1>
         <p className="text-suave max-w-2xl !mb-0">Explore os parâmetros do MyCommerce. Encontre o caminho, entenda o impacto e consulte a documentação.</p></div>
-      {papel === 'administrador' && <Link className="botao fantasma" to="/novo"><Plus size={17} aria-hidden />Novo parâmetro</Link>}
+      {papel === 'administrador' && <Link className="botao" to="/novo"><Plus size={17} aria-hidden />Novo parâmetro</Link>}
     </div>
     <form role="search" className="flex flex-wrap sm:flex-nowrap gap-3" onSubmit={e => { e.preventDefault(); aplicar({ ...filtros, termo: termo.trim() || undefined }); }}>
       <label className="relative flex-1 min-w-0 basis-full sm:basis-auto"><span className="sr-only">Buscar parâmetros</span>

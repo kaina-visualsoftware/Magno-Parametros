@@ -17,6 +17,9 @@ const PaginaTags = lazy(() => import('./paginas/PaginaTags'));
 const PaginaAbas = lazy(() => import('./paginas/PaginaAbas'));
 const PaginaTag = lazy(() => import('./paginas/PaginaTag'));
 const PaginaEntrar = lazy(() => import('./paginas/PaginaEntrar'));
+const PaginaAdmin = lazy(() => import('./paginas/PaginaAdmin'));
+const PaginaRevisao = lazy(() => import('./paginas/PaginaRevisao'));
+const PaginaHistoricoImportacoes = lazy(() => import('./paginas/PaginaHistoricoImportacoes'));
 
 export default function App() {
   if (!configuracaoPresente()) {
@@ -39,6 +42,9 @@ export default function App() {
             <Route path="/tag/:slug" element={<PaginaTag />} />
             <Route path="/importar" element={<PaginaImportacao />} />
             <Route path="/entrar" element={<PaginaEntrar />} />
+            <Route path="/admin" element={<PaginaAdmin />} />
+            <Route path="/admin/revisao" element={<PaginaRevisao />} />
+            <Route path="/admin/historico" element={<PaginaHistoricoImportacoes />} />
             <Route path="*" element={<PaginaNaoEncontrada />} />
           </Routes>
         </Suspense>
