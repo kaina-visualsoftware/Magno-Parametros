@@ -239,6 +239,7 @@ export async function criarParametro(entrada: {
     ativo: true,
     caminho,
     imagemOrigem: null,
+    imagemPersonalizadaPath: null,
     imagemMarcada: false,
     textoBusca: montarTextoBusca([entrada.nome, entrada.grupo, caminho]),
   };
