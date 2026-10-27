@@ -2,7 +2,7 @@ name: Validar pull request
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feat/admin-experiencia-completa]
   workflow_dispatch:
 
 permissions:
