@@ -146,7 +146,7 @@ export default function PaginaParametro() {
 
   return (
     <article className="pagina-parametro">
-      <Link to={retorno} className="inline-flex items-center gap-2 text-sm mb-6"><ArrowLeft size={16} aria-hidden />Voltar ao catálogo</Link>
+      <Link to={retorno} className="inline-flex items-center gap-2 text-sm mb-2"><ArrowLeft size={16} aria-hidden />Voltar ao catálogo</Link>
       <Migalhas segmentos={parametro.caminho.split(' > ')} />
 
       <header className="cabecalho-parametro">
@@ -156,17 +156,13 @@ export default function PaginaParametro() {
           <StatusParametro status={parametro.statusDocumentacao} />
           <span className="etiqueta origem">origem: {parametro.origem}</span>
           {!parametro.ativo && <span className="etiqueta inativo">inativo</span>}
-          {parametro.imagemOrigem && (
-            <span className="etiqueta" title="Captura de tela usada como evidência na origem">
-              evidência: {parametro.imagemOrigem}
-            </span>
-          )}
+          
         </div>
       </header>
 
       {erro && <p className="erro" role="alert">{erro}</p>}
 
-      {admin && <div className="flex flex-wrap items-center gap-3 mb-6">
+      {admin && <div className="flex flex-wrap items-center gap-3 mb-3">
         <button type="button" className={edicaoAtiva?'botao fantasma':'botao'} aria-pressed={edicaoAtiva}
           onClick={async () => {
             if (edicaoAtiva && rascunho.current.alterado) {
@@ -176,68 +172,17 @@ export default function PaginaParametro() {
           }}><PenLine size={17} aria-hidden/>{edicaoAtiva?'Concluir edição':'Editar parâmetro'}</button>
         {edicaoAtiva && <span className="text-sm text-suave">Você está no modo de edição. Salve cada seção separadamente.</span>}
       </div>}
-      <ImagemParametro parametro={parametro} admin={admin && edicaoAtiva} />
-      <CorrespondenciaBancoParametro key={parametro.id} parametroId={parametro.id} />
 
-      <div className="grade-detalhe">
-        <section className="cartao">
-          <h2>
-            Dados de origem <span className="dica block font-normal">Campos importados; administradores podem ajustar os valores (ajustes criam conflitos na reimportação).</span>
-          </h2>
-          <dl className="definicoes">
-            <dt>Tipo</dt>
-            <dd>{parametro.tipo}{admin && edicaoAtiva && <button type="button" className="botao-icone pequeno" disabled={editarOrigem.isPending} title="Editar tipo" aria-label="Editar tipo" onClick={() => pedirEdicaoDeOrigem('tipo', parametro.tipo)}><Pencil size={16} aria-hidden /></button>}</dd>
-            <dt>Grupo</dt>
-            <dd>
-              {parametro.grupo}
-              {admin && edicaoAtiva && (
-                <button
-                  type="button"
-                  className="botao-icone pequeno"
-                  title="Editar grupo (campo de origem)"
-                  aria-label="Editar grupo (campo de origem)"
-                  disabled={editarOrigem.isPending}
-                  onClick={() => pedirEdicaoDeOrigem('grupo', parametro.grupo)}
-                >
-                  <Pencil size={16} aria-hidden />
-                </button>
-              )}
-            </dd>
-            <dt>Descrição original</dt>
-            <dd>
-              {parametro.descricaoOriginal ?? '—'}
-              {admin && (
-                <button
-                  type="button"
-                  className="botao-icone pequeno"
-                  title="Editar descrição original (campo de origem)"
-                  aria-label="Editar descrição original (campo de origem)"
-                  disabled={editarOrigem.isPending}
-                  onClick={() => pedirEdicaoDeOrigem('descricaoOriginal', parametro.descricaoOriginal)}
-                >
-                  <Pencil size={16} aria-hidden />
-                </button>
-              )}
-            </dd>
-            <dt>Opções</dt>
-            <dd>{parametro.opcoes.length > 0 ? parametro.opcoes.join(' · ') : '—'}{admin && <button type="button" className="botao-icone pequeno" disabled={editarOrigem.isPending} title="Editar opções" aria-label="Editar opções" onClick={() => pedirEdicaoDeOrigem('opcoes', parametro.opcoes.join('\n'))}><Pencil size={16} aria-hidden /></button>}</dd>
-            <dt>Identificador</dt>
-            <dd className="texto-mono">{parametro.id}</dd>
-          </dl>
-          {admin && (
-            <button
-              type="button"
-              className="botao fantasma"
-              disabled={editarOrigem.isPending}
-              onClick={() => pedirEdicaoDeOrigem('nome', parametro.nome)}
-            >
-              Renomear parâmetro (campo de origem)
-            </button>
-          )}
-        </section>
-
-        <section className="cartao">
+      <div className="detalhe-compacto-grid">
+        <div className="detalhe-principal">
+          <section className="cartao detalhe-documentacao">
           <h2>Documentação</h2>
+          {(!podeEditar || (admin && !edicaoAtiva)) ? <dl className="detalhe-leitura">
+            <div><dt>O que faz</dt><dd>{parametro.oQueFaz || parametro.descricaoOriginal || 'Ainda não documentado.'}</dd></div>
+            {parametro.impacto && <div><dt>Impacto</dt><dd>{parametro.impacto}</dd></div>}
+            {parametro.valorPadrao && <div><dt>Valor padrão</dt><dd>{parametro.valorPadrao}</dd></div>}
+            {parametro.observacoes && <div><dt>Observações</dt><dd>{parametro.observacoes}</dd></div>}
+          </dl> : <>
           {!parametro.oQueFaz && parametro.descricaoOriginal && <p className="dica">A descrição inicial abaixo foi importada do arquivo de origem. Ao salvar, ela passará a integrar a documentação editável.</p>}
           <fieldset disabled={!podeEditar || (admin && !edicaoAtiva) || salvar.isPending} style={{ border: 0, padding: 0, margin: 0 }}
             onChange={() => { rascunho.current.alterado = true; setMensagem(''); }}>
@@ -324,10 +269,69 @@ export default function PaginaParametro() {
               documentação. <Link to="/entrar">Entrar</Link>
             </p>
           )}
+          </>}
           {mensagem && <p className="mensagem-sucesso" role="status">{mensagem}</p>}
         </section>
-
-        <section className="cartao">
+          <details className="detalhe-recolhivel">
+            <summary>Dados técnicos e identificador</summary>
+            <section className="cartao detalhe-tecnico">
+          <h2>
+            Dados de origem
+          </h2>
+          <p className="dica mb-3">Dados técnicos do catálogo</p>
+          <dl className="definicoes">
+            <dt>Tipo</dt>
+            <dd>{parametro.tipo}{admin && edicaoAtiva && <button type="button" className="botao-icone pequeno" disabled={editarOrigem.isPending} title="Editar tipo" aria-label="Editar tipo" onClick={() => pedirEdicaoDeOrigem('tipo', parametro.tipo)}><Pencil size={16} aria-hidden /></button>}</dd>
+            <dt>Grupo</dt>
+            <dd>
+              {parametro.grupo}
+              {admin && edicaoAtiva && (
+                <button
+                  type="button"
+                  className="botao-icone pequeno"
+                  title="Editar grupo (campo de origem)"
+                  aria-label="Editar grupo (campo de origem)"
+                  disabled={editarOrigem.isPending}
+                  onClick={() => pedirEdicaoDeOrigem('grupo', parametro.grupo)}
+                >
+                  <Pencil size={16} aria-hidden />
+                </button>
+              )}
+            </dd>
+            <dt>Descrição original</dt>
+            <dd>
+              {parametro.descricaoOriginal ?? '—'}
+              {admin && edicaoAtiva && (
+                <button
+                  type="button"
+                  className="botao-icone pequeno"
+                  title="Editar descrição original (campo de origem)"
+                  aria-label="Editar descrição original (campo de origem)"
+                  disabled={editarOrigem.isPending}
+                  onClick={() => pedirEdicaoDeOrigem('descricaoOriginal', parametro.descricaoOriginal)}
+                >
+                  <Pencil size={16} aria-hidden />
+                </button>
+              )}
+            </dd>
+            <dt>Opções</dt>
+            <dd>{parametro.opcoes.length > 0 ? parametro.opcoes.join(' · ') : '—'}{admin && edicaoAtiva && <button type="button" className="botao-icone pequeno" disabled={editarOrigem.isPending} title="Editar opções" aria-label="Editar opções" onClick={() => pedirEdicaoDeOrigem('opcoes', parametro.opcoes.join('\n'))}><Pencil size={16} aria-hidden /></button>}</dd>
+            <dt>Identificador</dt>
+            <dd className="texto-mono">{parametro.id}</dd>
+          </dl>
+          {admin && edicaoAtiva && (
+            <button
+              type="button"
+              className="botao fantasma"
+              disabled={editarOrigem.isPending}
+              onClick={() => pedirEdicaoDeOrigem('nome', parametro.nome)}
+            >
+              Renomear parâmetro (campo de origem)
+            </button>
+          )}
+        </section>
+          </details>
+          <section className="cartao detalhe-tags">
           <h2>Tags</h2>
           {vinculos.isPending ? <Carregando /> : vinculos.error ? (
             <ErroCarregamento erro={vinculos.error} aoTentarNovamente={() => void vinculos.refetch()} />
@@ -343,8 +347,13 @@ export default function PaginaParametro() {
             </>
           )}
         </section>
-
-        <section className="cartao">
+        </div>
+        <aside className="detalhe-lateral" aria-label="Referências do parâmetro">
+          <CorrespondenciaBancoParametro key={parametro.id} parametroId={parametro.id} />
+          <ImagemParametro parametro={parametro} admin={admin && edicaoAtiva} />
+        </aside>
+      </div>
+      <section className="cartao detalhe-historico">
           <details onToggle={e => setHistoricoAberto(e.currentTarget.open)}>
           <summary className="font-semibold">Histórico de alterações</summary>
           {!usuario ? <p className="dica">Entre com uma conta de equipe para consultar o histórico.</p> : !podeEditar ? <p className="dica">Histórico disponível apenas para editores e administradores.</p> : !historicoAberto ? null
@@ -383,7 +392,6 @@ export default function PaginaParametro() {
           </>}
           </details>
         </section>
-      </div>
 
       {admin && edicaoAtiva && parametro.ativo && (
         <div className="zona-perigo">

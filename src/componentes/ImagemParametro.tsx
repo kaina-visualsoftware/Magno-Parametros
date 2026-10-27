@@ -129,11 +129,11 @@ export function ImagemParametro({ parametro, admin }: { parametro: Parametro; ad
 
   return <section className="cartao cartao-imagem">
     <h2>Imagem do parâmetro</h2>
-    {atual && !falha ? <img className="imagem-destacada" src={atual}
+    {atual && !falha ? <a href={atual} target="_blank" rel="noopener noreferrer" aria-label="Abrir imagem do parâmetro em tamanho completo" title="Abrir imagem em tamanho completo"><img className="imagem-destacada" src={atual}
       alt={parametro.imagemPersonalizadaPath
         ? `Imagem de referência do parâmetro ${parametro.nome}`
         : `Recorte da tela de origem com ${parametro.nome} destacado`}
-      loading="lazy" onError={() => setFalha(true)} />
+      loading="lazy" onError={() => setFalha(true)} /></a>
       : <p className="dica">Este parâmetro ainda não possui imagem disponível.</p>}
     {parametro.imagemPersonalizadaPath
       ? <p className="dica">Imagem cadastrada pelo administrador.</p>
