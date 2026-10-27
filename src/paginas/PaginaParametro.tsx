@@ -132,7 +132,7 @@ export default function PaginaParametro() {
 
   async function pedirEdicaoDeOrigem(campo: 'nome' | 'grupo' | 'descricaoOriginal' | 'tipo' | 'opcoes', valorAtual: string | null) {
     const valor = await perguntar(
-      `Editar o campo de origem "${campo}".\n\nAtenção: este campo veio do arquivo importado. ` +
+      `Editar o campo de origem "${campo}".${campo === "opcoes" ? "\nUma opção por linha." : ""}\n\nAtenção: este campo veio do arquivo importado. ` +
         'Ao editá-lo, a próxima importação NÃO sobrescreverá este parâmetro (ficará como conflito para revisão).',
       valorAtual ?? '',
     );
