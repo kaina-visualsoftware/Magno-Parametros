@@ -94,7 +94,7 @@ export function ReportarProblema({ fechar, parametroInicial = '' }: ReportarProb
               value={descricao} onChange={e => setDescricao(e.target.value)} />
           </label>
           <label className="campo">
-            <span>URL ou caminho do parâmetro (opcional)</span>
+            <span>Parâmetro relacionado</span>
             <input type="text" maxLength={400} value={parametro}
               placeholder="MyCommerce > Financeiro > Configuração..."
               onChange={e => setParametro(e.target.value)} />
