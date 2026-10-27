@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Bug, LogIn, LogOut, Menu, X } from 'lucide-react';
 import { useAutenticacao } from '../aplicacao/autenticacao';
 import { AlternadorTema } from './AlternadorTema';
@@ -8,6 +8,9 @@ import { cn } from '../lib/cn';
 
 export function Cabecalho() {
   const { usuario, papel, sair } = useAutenticacao();
+  const localizacao = useLocation();
+  const identificadorParametro = /^\/parametro\/([^/]+)\/?$/.exec(localizacao.pathname)?.[1];
+  const referenciaParametro = identificadorParametro ? decodeURIComponent(identificadorParametro) : null;
   const [aberto, setAberto] = useState(false);
   const [saindo, setSaindo] = useState(false);
   const [erro, setErro] = useState('');
@@ -26,7 +29,7 @@ export function Cabecalho() {
       <nav id="menu-principal" aria-label="Navegação principal" className={cn('items-center gap-1 w-full md:w-auto md:flex', aberto ? 'flex flex-wrap' : 'hidden')}>
         {[['/', 'Catálogo'], ['/tags', 'Tags'], ...(papel === 'administrador' ? [['/novo','Novo parâmetro'], ['/abas','Abas'], ['/importar','Importar']] : [])].map(([rota,nome]) =>
           <NavLink key={rota} to={rota} end className={({ isActive }) => cn('rounded-lg px-3 py-2.5 text-sm !text-suave hover:bg-elevada', isActive && 'bg-elevada !text-tinta')} onClick={() => setAberto(false)}>{nome}</NavLink>)}
-        <button type="button" className="botao-icone" title="Reportar problema ou sugerir parâmetro" onClick={() => { setReportarAberto(true); setAberto(false); }}><Bug size={17} aria-hidden /><span className="text-sm hidden sm:inline">Reportar</span></button>
+        {referenciaParametro && <button type="button" className="botao-icone" title="Sugerir correção deste parâmetro" onClick={() => { setReportarAberto(true); setAberto(false); }}><Bug size={17} aria-hidden /><span className="text-sm hidden sm:inline">Sugerir correção</span></button>}
         {usuario ? (
           <>
             <span className="text-xs text-suave px-2" title="Permissões registradas no Supabase">Papel: {papel ?? 'carregando…'}</span>
@@ -54,11 +57,12 @@ export function Cabecalho() {
       </nav>
       {erro && <p role="alert" className="erro w-full">{erro}</p>}
     </div>
-    {reportarAberto && (
+    {reportarAberto && referenciaParametro && (
       <ReportarProblema
         aberto={reportarAberto}
         fechar={() => setReportarAberto(false)}
         usuario={usuario?.email}
+        parametroInicial={referenciaParametro}
       />
     )}
   </header>;
