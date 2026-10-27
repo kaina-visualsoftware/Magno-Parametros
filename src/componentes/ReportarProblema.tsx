@@ -6,6 +6,7 @@ interface ReportarProblemaProps {
   aberto: boolean;
   fechar(): void;
   usuario?: string;
+  parametroInicial?: string;
 }
 
 interface RespostaSugestao {
@@ -38,9 +39,9 @@ export function construirUrlIssue(descricao: string, parametro: string): string 
   return url.toString();
 }
 
-export function ReportarProblema({ fechar }: ReportarProblemaProps) {
+export function ReportarProblema({ fechar, parametroInicial = '' }: ReportarProblemaProps) {
   const [descricao, setDescricao] = useState('');
-  const [parametro, setParametro] = useState('');
+  const [parametro, setParametro] = useState(parametroInicial);
   const [site, setSite] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
