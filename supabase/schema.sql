@@ -495,7 +495,7 @@ begin
   end if;
   if p_caminho is not null and (
     length(p_caminho) > 600 or
-    p_caminho not like p_id || '/%' or
+    split_part(p_caminho, '/', 1) <> p_id or
     p_caminho !~ '^[a-zA-Z0-9_-]+/[a-f0-9-]{36}\.(png|jpg|webp)$' or
     not exists(select 1 from storage.objects o where o.bucket_id='imagens-parametros'
       and o.name=p_caminho and o.metadata->>'mimetype' in ('image/png','image/jpeg','image/webp'))
