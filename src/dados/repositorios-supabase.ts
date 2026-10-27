@@ -57,6 +57,7 @@ function deLinhaParametro(linha: Linha): Parametro {
     ativo: linha.ativo !== false,
     caminho: String(linha.caminho ?? ''),
     imagemOrigem: (linha.imagem_origem as string | null) ?? null,
+    imagemPersonalizadaPath: (linha.imagem_personalizada_path as string | null) ?? null,
     imagemMarcada: Boolean(linha.imagem_marcada),
     textoBusca: String(linha.texto_busca ?? ''),
   };
@@ -84,6 +85,7 @@ function paraLinhaParametro(p: Parametro): Linha {
     ativo: p.ativo,
     caminho: p.caminho,
     imagem_origem: p.imagemOrigem,
+    imagem_personalizada_path: p.imagemPersonalizadaPath,
     imagem_marcada: p.imagemMarcada,
     texto_busca: p.textoBusca,
   };
