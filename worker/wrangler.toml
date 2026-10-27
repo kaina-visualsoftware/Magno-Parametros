@@ -7,3 +7,9 @@ compatibility_date = "2026-10-25"
 [vars]
 SUPABASE_URL = "https://dmgmalzqywrjecvzbkjy.supabase.co"
 ALLOWED_ORIGINS = "https://kaina-visualsoftware.github.io,http://localhost:5173"
+
+# Rate limiting: 3 envios por minuto por IP/PoP (limite regional, não global).
+[[ratelimits]]
+name = "ISSUE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 3, period = 60 }
