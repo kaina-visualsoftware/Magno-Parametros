@@ -6,7 +6,7 @@ import { ehAdministrador, useAutenticacao } from '../aplicacao/autenticacao';
 import { useDialogos } from '../componentes/Dialogo';
 import { Carregando, ErroCarregamento } from '../componentes/Estado';
 import { listarFilaAdministrativa, type TipoFila } from '../servicos/administracao';
-import { obterParametro, salvarDocumentacao, listarTags, aplicarTag, baixarArquivo } from '../servicos/catalogo';
+import { obterParametro, obterTagsParametro, salvarDocumentacao, listarTags, aplicarTag, baixarArquivo } from '../servicos/catalogo';
 import { planejarLoteStatus, relatorioLoteCsv } from '../dominio/lote-admin';
 import type { StatusDocumentacao } from '../dominio/entidades';
 
@@ -54,12 +54,25 @@ export default function PaginaRevisao() {
       id:p.id,nome:p.nome,statusDocumentacao:p.statusDocumentacao,versao:p.versao,
     })),statusAlvo) : null;
     const ignorados=new Set(planejamento?.ignorar.map(p=>p.id)??[]);
+    if(acaoLote==='tag') {
+      for(const p of validos) {
+        try {
+          const tags=await obterTagsParametro(p.id);
+          if(tags.some(t=>t.id===tagAlvo)) ignorados.add(p.id);
+        } catch(e) {
+          registro.push({id:p.id,acao:acaoLote,resultado:'falha',mensagem:e instanceof Error?e.message:'Falha ao consultar tags'});
+          ignorados.add(p.id);
+        }
+      }
+    }
     const executar=validos.filter(p=>!ignorados.has(p.id));
     const mensagem=acaoLote==='status'
       ? `Alterar o status de ${executar.length} parâmetro(s) para "${statusAlvo}"? ${ignorados.size} já estão nesse status e serão ignorados. ${registro.length} falharam na verificação inicial.`
       : `Adicionar a tag selecionada a ${executar.length} parâmetro(s)? ${registro.length} falharam na verificação inicial.`;
     if(!await confirmar(`${mensagem} A operação é sequencial e não pode ser desfeita em bloco.`)) return [];
-    for(const id of ignorados) registro.push({id,acao:acaoLote,resultado:'ignorado',mensagem:'Já está no status escolhido'});
+    for(const id of ignorados) {
+      if(!registro.some(x=>x.id===id)) registro.push({id,acao:acaoLote,resultado:'ignorado',mensagem:acaoLote==='tag'?'Tag já aplicada':'Já está no status escolhido'});
+    }
     for(const p of executar){
       try {
         if(acaoLote==='tag') await aplicarTag(p.id,tagAlvo);
