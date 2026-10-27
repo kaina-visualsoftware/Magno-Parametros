@@ -90,6 +90,16 @@ describe('Comparador de importação (idempotência)', () => {
     expect(resultado.paraSalvar[0].statusDocumentacao).toBe('pendente');
   });
 
+  it('reimportação preserva a imagem personalizada do administrador', () => {
+    const antes = {
+      ...parametroDeTeste('hash-anterior'),
+      imagemPersonalizadaPath: 'id-teste/123e4567-e89b-42d3-a456-426614174000.png',
+    };
+    const novo = parametroDeTeste('hash-novo');
+    const resultado = compararParametros([novo], new Map([[antes.id, antes]]));
+    expect(resultado.paraSalvar[0].imagemPersonalizadaPath).toBe(antes.imagemPersonalizadaPath);
+  });
+
   it('atualização de origem preserva documentação, versão e texto de busca documental', () => {
     const anterior = { ...parametroDeTeste('antigo'), oQueFaz: 'Ação no orçamento', versao: 4 };
     const resultado = compararParametros([parametroDeTeste('novo')], new Map([[anterior.id, anterior]]));
