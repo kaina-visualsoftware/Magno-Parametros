@@ -62,6 +62,7 @@ describe('Comparador de importação (idempotência)', () => {
       ativo: true,
       caminho: 'Utilitários > Configuração > Parâmetro Teste',
       imagemOrigem: null,
+      imagemPersonalizadaPath: null,
       imagemMarcada: false,
       textoBusca: 'parametro teste',
     };
@@ -87,6 +88,16 @@ describe('Comparador de importação (idempotência)', () => {
     const resultado = compararParametros([parametroDeTeste('hash-x')], new Map());
     expect(resultado.novos).toBe(1);
     expect(resultado.paraSalvar[0].statusDocumentacao).toBe('pendente');
+  });
+
+  it('reimportação preserva a imagem personalizada do administrador', () => {
+    const antes = {
+      ...parametroDeTeste('hash-anterior'),
+      imagemPersonalizadaPath: 'id-teste/123e4567-e89b-42d3-a456-426614174000.png',
+    };
+    const novo = parametroDeTeste('hash-novo');
+    const resultado = compararParametros([novo], new Map([[antes.id, antes]]));
+    expect(resultado.paraSalvar[0].imagemPersonalizadaPath).toBe(antes.imagemPersonalizadaPath);
   });
 
   it('atualização de origem preserva documentação, versão e texto de busca documental', () => {

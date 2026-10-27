@@ -14,7 +14,7 @@ export interface Env {
   ISSUE_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
 }
 
-const CAMINHOS_PERMITIDOS = ['/rest/v1', '/auth/v1'];
+const CAMINHOS_PERMITIDOS = ['/rest/v1', '/auth/v1', '/storage/v1'];
 const METODOS_PERMITIDOS = new Set(['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']);
 
 // Headers do navegador/Cloudflare que não devem ser repassados ao Supabase.

@@ -22,6 +22,7 @@ import {
 } from '../aplicacao/autenticacao';
 import { Parametro, StatusDocumentacao } from '../dominio/entidades';
 import { StatusParametro } from '../componentes/StatusParametro';
+import { ImagemParametro } from '../componentes/ImagemParametro';
 
 export default function PaginaParametro() {
   const { confirmar, perguntar } = useDialogos();
@@ -52,7 +53,6 @@ export default function PaginaParametro() {
   const [statusDoc, setStatusDoc] = useState<StatusDocumentacao>('pendente');
   const [mensagem, setMensagem] = useState('');
   const [erro, setErro] = useState('');
-  const [falhaImagem, setFalhaImagem] = useState(false);
   const [versaoEsperada, setVersaoEsperada] = useState(0);
   const rascunho = useRef({ id, alterado: false });
 
@@ -67,7 +67,6 @@ export default function PaginaParametro() {
   }
 
   useEffect(() => {
-    setFalhaImagem(false);
     setMensagem('');
     setErro('');
   }, [id]);
@@ -163,22 +162,7 @@ export default function PaginaParametro() {
 
       {erro && <p className="erro" role="alert">{erro}</p>}
 
-      {parametro.imagemMarcada && !falhaImagem && (
-        <section className="cartao cartao-imagem">
-          <h2>Localização na tela de origem</h2>
-          <img
-            className="imagem-destacada"
-            src={`${import.meta.env.BASE_URL}imagens-parametro/${parametro.id}.png`}
-            alt={`Captura da tela de origem com "${parametro.nome}" destacado em retângulo vermelho`}
-            loading="lazy"
-            onError={() => setFalhaImagem(true)}
-          />
-          <p className="dica">
-            Retângulo vermelho: posição do parâmetro na captura original
-            {parametro.imagemOrigem ? ` (${parametro.imagemOrigem})` : ''}.
-          </p>
-        </section>
-      )}
+      <ImagemParametro parametro={parametro} admin={admin} />
 
       <div className="grade-detalhe">
         <section className="cartao">
