@@ -11,7 +11,6 @@ interface ReportarProblemaProps {
 export function ReportarProblema({ fechar, usuario }: ReportarProblemaProps) {
   const [descricao, setDescricao] = useState('');
   const [urlParametro, setUrlParametro] = useState('');
-  const [enviando, setEnviando] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,56 +30,11 @@ export function ReportarProblema({ fechar, usuario }: ReportarProblemaProps) {
       'Este é um relatório enviado pelo catálogo de parâmetros do MyCommerce.',
     ].filter(Boolean).join('\n');
 
-    setEnviando(true);
-
-    try {
-      const response = await fetch('https://api.github.com/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_GITHUB_TOKEN}`,
-        },
-        body: JSON.stringify({
-          query: `
-            mutation createIssue($input: CreateIssueInput!) {
-              createIssue(input: $input) {
-                issue {
-                  id
-                  number
-                  title
-                  url
-                }
-              }
-            }
-          `,
-          variables: {
-            input: {
-              repositoryOwner: 'kaina-visualsoftware',
-              repositoryName: 'Myc.config',
-              title: titulo,
-              body: corpo,
-              labels: ['bug', 'enhancement', 'catalogo'],
-            },
-          },
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.errors) {
-        throw new Error(data.errors.map((e: any) => e.message).join(', '));
-      }
-
-      alert('Issue criado com sucesso! Você será redirecionado para a issue no GitHub.');
-      setDescricao('');
-      setUrlParametro('');
-      fechar();
-    } catch (erro) {
-      console.error('Erro ao criar issue:', erro);
-      alert(`Erro ao criar issue: ${(erro as Error).message}. Por favor, tente novamente ou abra manualmente um issue no GitHub.`);
-    } finally {
-      setEnviando(false);
-    }
+    const url = new URL('https://github.com/kaina-visualsoftware/Myc.config/issues/new');
+    url.searchParams.set('title', titulo);
+    url.searchParams.set('body', corpo);
+    window.open(url.toString(), '_blank', 'noopener,noreferrer');
+    fechar();
   };
 
   return (
@@ -120,14 +74,12 @@ export function ReportarProblema({ fechar, usuario }: ReportarProblemaProps) {
           </button>
           <button
             type="submit"
-            disabled={!descricao.trim() || enviando}
+            disabled={!descricao.trim()}
             className="botao"
           >
-            {enviando ? 'Enviando...' : (
-              <>
+            <>
                 <Bug size={16} aria-hidden />Enviar para GitHub Issues
-              </>
-            )}
+</>
           </button>
         </div>
       </form>
