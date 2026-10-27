@@ -137,7 +137,7 @@ async function criarSugestao(request: Request, env: Env, origem: string | null):
     '## Descrição', dados.descricao.trim(), '',
     referencia ? `**Referência do parâmetro:** ${referencia}` : '',
     '', '---', 'Enviado pelo catálogo público de parâmetros do MyCommerce.',
-  ].filter(Boolean).join('\\n');
+  ].filter(Boolean).join('\n');
 
   try {
     const resposta = await fetch('https://api.github.com/repos/kaina-visualsoftware/Myc.config/issues', {
