@@ -20,7 +20,7 @@ export default function PaginaHistoricoImportacoes() {
     const linhas=[['Data','Fonte','Lidos','Novos','Alterados','Inalterados','Conflitos','Alertas'],
       ...filtrados.map(e=>[e.criado_em,e.fonte,e.relatorio.totalLido,e.relatorio.novos,e.relatorio.alterados,
         e.relatorio.inalterados,e.relatorio.conflitos.length,e.relatorio.alertas.length])];
-    const csv='\\uFEFF'+linhas.map(l=>l.map(c=>'"'+String(c).replaceAll('"','""')+'"').join(';')).join('\\r\\n');
+    const csv='\uFEFF'+linhas.map(l=>l.map(c=>'"'+String(c).replaceAll('"','""')+'"').join(';')).join('\r\n');
     baixarArquivo('historico-importacoes.csv',csv,'text/csv;charset=utf-8');
   }
   return <section>
