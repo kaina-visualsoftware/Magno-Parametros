@@ -17,7 +17,7 @@ export interface ItemRevisao {
   versao: number;
   o_que_faz: string | null;
 }
-export type TipoFila = 'documentacao' | 'sem-imagem' | 'ocr' | 'conflitos' | 'todos';
+export type TipoFila = 'documentacao' | 'sem-imagem' | 'ocr' | 'manual' | 'conflitos' | 'todos';
 export interface PaginaAdministrativa { itens: ItemRevisao[]; total: number }
 
 export async function contarPendencias(): Promise<{
@@ -47,6 +47,7 @@ export async function listarFilaAdministrativa(tipo: TipoFila, pagina: number, b
   if (tipo === 'documentacao') consulta = consulta.eq('status_documentacao', 'pendente');
   if (tipo === 'sem-imagem') consulta = consulta.eq('imagem_marcada', false).is('imagem_personalizada_path', null);
   if (tipo === 'ocr') consulta = consulta.eq('imagem_marcada', true).is('imagem_personalizada_path', null);
+  if (tipo === 'manual') consulta = consulta.not('imagem_personalizada_path', 'is', null);
   if (tipo === 'conflitos') consulta = consulta.eq('editado_na_origem', true);
   if (busca.trim()) consulta = consulta.ilike('nome', `%${busca.trim().replace(/[%,]/g, '')}%`);
   const { data, count, error } = await consulta.range(pagina * tamanho, pagina * tamanho + tamanho - 1);

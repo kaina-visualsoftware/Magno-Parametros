@@ -8,7 +8,7 @@ import { Carregando, ErroCarregamento } from '../componentes/Estado';
 const acoes = [
   { rota: '/novo', titulo: 'Novo parâmetro', descricao: 'Cadastrar manualmente', Icone: Plus },
   { rota: '/admin/revisao?tipo=documentacao', titulo: 'Revisar documentação', descricao: 'Pendências do catálogo', Icone: ListChecks },
-  { rota: '/admin/revisao?tipo=sem-imagem', titulo: 'Revisar imagens', descricao: 'Capturas ausentes ou automáticas', Icone: Image },
+  { rota: '/admin/imagens', titulo: 'Revisar imagens', descricao: 'Capturas ausentes ou automáticas', Icone: Image },
   { rota: '/importar', titulo: 'Importar parâmetros', descricao: 'Conferir antes de gravar', Icone: FileInput },
   { rota: '/abas', titulo: 'Telas e abas', descricao: 'Corrigir a estrutura', Icone: FolderTree },
   { rota: '/tags', titulo: 'Gerenciar tags', descricao: 'Organização e classificação', Icone: Tags },

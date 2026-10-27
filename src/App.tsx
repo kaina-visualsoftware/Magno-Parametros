@@ -18,6 +18,7 @@ const PaginaAbas = lazy(() => import('./paginas/PaginaAbas'));
 const PaginaTag = lazy(() => import('./paginas/PaginaTag'));
 const PaginaEntrar = lazy(() => import('./paginas/PaginaEntrar'));
 const PaginaAdmin = lazy(() => import('./paginas/PaginaAdmin'));
+const PaginaImagensAdmin = lazy(() => import('./paginas/PaginaImagensAdmin'));
 const PaginaRevisao = lazy(() => import('./paginas/PaginaRevisao'));
 const PaginaHistoricoImportacoes = lazy(() => import('./paginas/PaginaHistoricoImportacoes'));
 
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="/entrar" element={<PaginaEntrar />} />
             <Route path="/admin" element={<PaginaAdmin />} />
             <Route path="/admin/revisao" element={<PaginaRevisao />} />
+            <Route path="/admin/imagens" element={<PaginaImagensAdmin />} />
             <Route path="/admin/historico" element={<PaginaHistoricoImportacoes />} />
             <Route path="*" element={<PaginaNaoEncontrada />} />
           </Routes>
