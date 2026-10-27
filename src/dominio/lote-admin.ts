@@ -19,5 +19,5 @@ export function planejarLoteStatus(itens: ItemLote[], alvo: StatusDocumentacao) 
 }
 export function relatorioLoteCsv(resultados: Array<{id:string;acao:string;resultado:'sucesso'|'ignorado'|'falha';mensagem:string}>): string {
   const linhas=[['ID','Ação','Resultado','Mensagem'],...resultados.map(x=>[x.id,x.acao,x.resultado,x.mensagem])];
-  return '\uFEFF'+linhas.map(l=>l.map(v=>`"${(/^[\\s]*[=+@-]/.test(v) ? "'"+v : v).replaceAll('"','""')}"`).join(';')).join('\r\n');
+  return '\uFEFF'+linhas.map(l=>l.map(v=>`"${(/^\s*[=+@-]/.test(v) ? "'"+v : v).replaceAll('"','""')}"`).join(';')).join('\r\n');
 }
