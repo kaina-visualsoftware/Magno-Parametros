@@ -5,7 +5,7 @@
 ## Funcionamento
 
 - Leitura pública: mostra `imagem_personalizada_path` quando preenchido; caso contrário, usa o recorte OCR estático se `imagem_marcada` estiver marcado. Parâmetros sem imagem mostram estado vazio.
-- Administrador: escolhe PNG/JPEG/WebP de até 5 MB, vê prévia e confirma o envio. O arquivo é enviado a `imagens-parametros/<id>/<uuid>.<ext>` em Supabase Storage, depois a RPC `definir_imagem_parametro` associa o objeto ao parâmetro.
+- Administrador: escolhe PNG/JPEG/WebP de até 20 MB, que é comprimido no navegador antes do envio (limite final de 5 MB), vê prévia e confirma. Se o arquivo original for menor que o WebP convertido, ele é preservado. O arquivo é enviado a `imagens-parametros/<id>/<uuid>.<ext>` em Supabase Storage, depois a RPC `definir_imagem_parametro` associa o objeto ao parâmetro.
 - Restaurar: limpa somente a referência manual; o recorte original volta a aparecer se existir. O arquivo personalizado antigo permanece no bucket para auditoria até limpeza administrativa futura.
 - Cada alteração associa o ID autenticado ao histórico e usa a versão do parâmetro para evitar sobrescrita concorrente.
 - A importação JSON preserva a referência manual. Os recortes em `public/imagens-parametro` são mantidos.
@@ -32,3 +32,7 @@ Nunca use `service_role` no frontend. O bucket permite downloads públicos, mas 
 - Os arquivos manuais são versionados; não se sobrescreve arquivo existente, evitando problemas de cache.
 - Se falhar a associação ao parâmetro, o cliente tenta remover o novo upload; em falhas de rede essa limpeza pode não ocorrer e exigirá coleta de órfãos.
 - A imagem recebida é uma referência pública. Evite imagens com dados pessoais, credenciais ou outros dados sensíveis.
+
+## Compressão automática
+
+A seleção de um arquivo inicia compressão local pelo Canvas API, preferindo WebP e até 2560 px no maior lado. A qualidade começa em 92% e diminui somente quando necessário para atender ao limite de 5 MB. O arquivo original prevalece se já for menor que a versão convertida. O formulário apresenta antes e depois da compressão e a prévia exata que será enviada. Nenhuma imagem é transmitida ao servidor durante a compressão. Capturas com textos muito pequenos devem ser revisadas na prévia antes de salvar.
