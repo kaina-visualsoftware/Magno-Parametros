@@ -5,8 +5,8 @@ Alternativa para redes/navegadores que bloqueiam chamadas diretas ao
 repassa `/rest/v1/*` e `/auth/v1/*` ao Supabase e devolve os headers CORS
 para a origem do catálogo.
 
-O Worker **não armazena segredos**. A chave publishable continua sendo enviada
-pelo cliente e repassada ao Supabase. O RLS continua protegendo os dados.
+O proxy de Supabase não usa segredos: a chave publishable continua sendo enviada
+pelo cliente e repassada ao Supabase. O RLS continua protegendo os dados.\nO endpoint de sugestões usa um segredo GitHub exclusivo do Worker (veja abaixo).
 
 ## Pré-requisitos
 
