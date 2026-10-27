@@ -45,7 +45,7 @@ export default function PaginaParametro() {
   const [edicaoAtiva, setEdicaoAtiva] = useState(false);
   const vinculos = useQuery({ queryKey: ['parametro-tags', id], queryFn: () => obterTagsParametro(id!), enabled: Boolean(id) });
   const catalogoTags = useQuery({ queryKey: ['tags'], queryFn: listarTags, enabled: podeEditar, staleTime: 300_000 });
-  const consultaHistorico = useQuery({ queryKey: ['historico', usuario?.id, id], queryFn: () => obterHistoricoParametro(id!), enabled: Boolean(id && usuario && historicoAberto) });
+  const consultaHistorico = useQuery({ queryKey: ['historico', usuario?.id, id], queryFn: () => obterHistoricoParametro(id!), enabled: Boolean(id && usuario && historicoAberto && podeEditar) });
 
   // ---- Estado do formulário de documentação ----
   const [oQueFaz, setOQueFaz] = useState('');
@@ -347,7 +347,7 @@ export default function PaginaParametro() {
         <section className="cartao">
           <details onToggle={e => setHistoricoAberto(e.currentTarget.open)}>
           <summary className="font-semibold">Histórico de alterações</summary>
-          {!usuario ? <p className="dica">Entre para consultar o histórico.</p> : !historicoAberto ? null
+          {!usuario ? <p className="dica">Entre com uma conta de equipe para consultar o histórico.</p> : !podeEditar ? <p className="dica">Histórico disponível apenas para editores e administradores.</p> : !historicoAberto ? null
             : consultaHistorico.isPending ? <Carregando /> : consultaHistorico.error ?
             <ErroCarregamento erro={consultaHistorico.error} aoTentarNovamente={() => void consultaHistorico.refetch()} /> : <>
           {historico.length === 0 ? (

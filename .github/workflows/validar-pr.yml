@@ -18,5 +18,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Auditar dependências de produção
+        run: |
+          npm audit --omit=dev --json > auditoria-npm.json || true
+          node -e 'const a=require("./auditoria-npm.json"); const v=Object.entries(a.vulnerabilities||{}).map(([nome,d])=>({pacote:nome,risco:d.severity,direta:d.isDirect})); console.log("Dependências vulneráveis:", JSON.stringify(v)); console.log("Totais:",JSON.stringify(a.metadata?.vulnerabilities||{}));'
       - run: npm test
       - run: npm run build
