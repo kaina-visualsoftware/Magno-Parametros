@@ -16,6 +16,7 @@
     "verificar-origem": "tsx scripts/verificar-origem.ts",
     "migrar": "tsx scripts/migrar.ts",
     "verificar-banco": "tsx scripts/verificar-banco.ts",
+    "criar-admin": "tsx scripts/criar-admin.ts",
     "marcar-imagens": "tsx scripts/marcar-imagens.ts"
   },
   "dependencies": {
