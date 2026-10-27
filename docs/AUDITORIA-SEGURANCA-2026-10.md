@@ -12,7 +12,7 @@ Código do catálogo público e das interfaces administrativas; scripts Node.js;
 A migration `0012_endurecimento_rls.sql` foi aplicada ao projeto Supabase e incluída no schema versionado.
 
 ## Correções de código
-- `scripts/importar.ts`, `scripts/migrar.ts` e `scripts/verificar-banco.ts` agora exigem verificação do certificado TLS nas conexões PostgreSQL.
+- `scripts/importar.ts`, `scripts/migrar.ts`, `scripts/verificar-banco.ts` e `scripts/marcar-imagens.ts` agora exigem verificação do certificado TLS nas conexões PostgreSQL.
 - Removido do script de verificação um teste de senha fixa de conta administrativa. **O segredo apareceu no histórico Git: é necessário rotacioná-lo se já foi usado.** Remover a linha não apaga commits antigos.
 - Testes de regressão verificam que esses padrões não retornam.
 
@@ -22,7 +22,7 @@ A migration `0012_endurecimento_rls.sql` foi aplicada ao projeto Supabase e incl
 - **RPCs SECURITY DEFINER para contas autenticadas:** `papel_atual`, `salvar_documentacao` e `definir_imagem_parametro` permanecem acessíveis aos papéis autenticados por necessidade do sistema. As duas últimas fazem autorização explícita dentro da função. Esse padrão merece testes dinâmicos periódicos para regressões.
 - **`_migracoes` e `limites_sugestoes` com RLS sem políticas:** intencional, pois seu acesso público é negado. O advisor classifica como INFO.
 - **API de sugestões públicas:** usa limites de envio por identificador da requisição, mas **CORS não é autenticação**. Cabeçalhos de IP precisam ser validados à luz do comportamento real do gateway. CAPTCHA/Turnstile e monitoramento são recomendados se houver spam. Não tratado como proteção absoluta.
-- **Dependências:** `npm ci` anteriormente apontou advisories de pacotes; revisar dependências com `npm audit` em ambiente com registry acessível. Não executar automaticamente `npm audit fix --force` sem verificar compatibilidade.
+- **Dependências:** a auditoria de dependências de produção encontrou 2 avisos de severidade moderada envolvendo `react-router-dom` e `react-router`. Nenhum aviso alto/crítico foi reportado entre dependências de produção nessa execução. A instalação completa ainda traz outras vulnerabilidades em dependências de desenvolvimento; atualizar com lockfile e testes, sem `npm audit fix --force` indiscriminado.
 - **Dados do MyCommerce:** este projeto é somente catálogo, não acesso administrativo ao banco operacional. Nunca expor conexão MySQL ou serviço de SQL direto ao navegador.
 
 ## Validação pós-merge
