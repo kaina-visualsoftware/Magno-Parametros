@@ -53,3 +53,28 @@ export async function listarFilaAdministrativa(tipo: TipoFila, pagina: number, b
   if (error) throw error;
   return { itens: (data ?? []) as ItemRevisao[], total: count ?? 0 };
 }
+
+import type { RelatorioImportacao } from '../aplicacao/caso-uso-importar';
+export interface RegistroImportacao {
+  id: number;
+  criado_em: string;
+  usuario_id: string;
+  fonte: string;
+  relatorio: RelatorioImportacao;
+}
+export async function registrarImportacao(relatorio: RelatorioImportacao): Promise<void> {
+  if (relatorio.dryRun) return;
+  const { error } = await obterClienteSupabase()
+    .from('importacoes_registros')
+    .insert({ fonte: relatorio.fonte.slice(0,200), relatorio });
+  if (error) throw error;
+}
+export async function listarImportacoes(): Promise<RegistroImportacao[]> {
+  const { data, error } = await obterClienteSupabase()
+    .from('importacoes_registros')
+    .select('id,criado_em,usuario_id,fonte,relatorio')
+    .order('criado_em', { ascending:false })
+    .limit(50);
+  if (error) throw error;
+  return (data??[]) as RegistroImportacao[];
+}
