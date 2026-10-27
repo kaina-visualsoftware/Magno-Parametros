@@ -456,6 +456,12 @@ values ('imagens-parametros', 'imagens-parametros', true, 5242880, array['image/
 on conflict (id) do update set public = true, file_size_limit = 5242880,
 allowed_mime_types = excluded.allowed_mime_types;
 
+drop policy if exists "imagens parametros admin select" on storage.objects;
+create policy "imagens parametros admin select" on storage.objects
+for select to authenticated using (
+  bucket_id = 'imagens-parametros' and (select public.papel_atual()) = 'administrador'
+);
+
 drop policy if exists "imagens parametros admin insert" on storage.objects;
 create policy "imagens parametros admin insert" on storage.objects
 for insert to authenticated
@@ -490,7 +496,7 @@ begin
   if p_caminho is not null and (
     length(p_caminho) > 600 or
     p_caminho not like p_id || '/%' or
-    p_caminho !~ '^[a-zA-Z0-9_-]+/[a-f0-9-]{36}\\.(png|jpg|webp)$' or
+    p_caminho !~ '^[a-zA-Z0-9_-]+/[a-f0-9-]{36}\.(png|jpg|webp)$' or
     not exists(select 1 from storage.objects o where o.bucket_id='imagens-parametros'
       and o.name=p_caminho and o.metadata->>'mimetype' in ('image/png','image/jpeg','image/webp'))
   ) then
