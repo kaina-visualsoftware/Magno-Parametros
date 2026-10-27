@@ -6,7 +6,8 @@ import { ehAdministrador, useAutenticacao } from '../aplicacao/autenticacao';
 import { useDialogos } from '../componentes/Dialogo';
 import { Carregando, ErroCarregamento } from '../componentes/Estado';
 import { listarFilaAdministrativa, type TipoFila } from '../servicos/administracao';
-import { obterParametro, salvarDocumentacao } from '../servicos/catalogo';
+import { obterParametro, salvarDocumentacao, listarTags, aplicarTag } from '../servicos/catalogo';
+import type { StatusDocumentacao } from '../dominio/entidades';
 
 const tipos: {valor: TipoFila; nome: string}[] = [
   {valor:'documentacao',nome:'Documentação pendente'},
@@ -24,13 +25,18 @@ export default function PaginaRevisao() {
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [resultadoLote, setResultadoLote] = useState('');
   const [errosLote, setErrosLote] = useState<string[]>([]);
+  const [acaoLote, setAcaoLote] = useState<'status'|'tag'>('status');
+  const [statusAlvo, setStatusAlvo] = useState<StatusDocumentacao>('revisado');
+  const [tagAlvo, setTagAlvo] = useState('');
+  const consultaTags = useQuery({queryKey:['tags'],queryFn:listarTags,enabled:ehAdministrador(papel)});
   const tipo = tipos.find(t=>t.valor===url.get('tipo'))?.valor ?? 'documentacao';
   const pagina = Math.max(0, Math.min(9999, Number(url.get('pagina') || '0') || 0));
   const pesquisa = (url.get('q') ?? '').slice(0,100);
   const query = useQuery({queryKey:['admin','fila',tipo,pagina,pesquisa],queryFn:()=>listarFilaAdministrativa(tipo,pagina,pesquisa),enabled:ehAdministrador(papel)});
   const lote = useMutation({mutationFn: async () => {
     if (!selecionados.length) return {ok:0, falhas:[] as string[]};
-    if (!await confirmar(`Marcar ${selecionados.length} parâmetros como revisados? Esta ação altera o status de cada um e registra o histórico.`))
+    if (acaoLote==='tag' && !tagAlvo) throw new Error('Escolha uma tag antes de aplicar.');
+    if (!await confirmar(`Aplicar ${acaoLote==='tag'?'a tag selecionada':`status ${statusAlvo}`} a ${selecionados.length} parâmetros? As alterações serão registradas no histórico quando suportado pelo serviço.`))
       return {ok:0,falhas:[] as string[]};
     let ok=0;
     const falhas:string[]=[];
@@ -38,17 +44,18 @@ export default function PaginaRevisao() {
       try {
         const p=await obterParametro(id);
         if (!p) throw new Error('Parâmetro não encontrado');
-        await salvarDocumentacao({
+        if (acaoLote==='tag') await aplicarTag(p.id,tagAlvo);
+        else await salvarDocumentacao({
           id:p.id,versaoEsperada:p.versao,oQueFaz:p.oQueFaz,
           impacto:p.impacto,valorPadrao:p.valorPadrao,observacoes:p.observacoes,
-          statusDocumentacao:'revisado',
+          statusDocumentacao:statusAlvo,
         });
         ok++;
       } catch(e) {falhas.push(`${id}: ${e instanceof Error ? e.message : 'Erro de gravação'}`);}
     }
     return {ok,falhas};
   }, onSuccess: async r=>{
-    setSelecionados([]);setResultadoLote(`${r.ok} parâmetro(s) revisado(s).`);
+    setSelecionados([]);setResultadoLote(`${r.ok} parâmetro(s) atualizado(s).`);
     setErrosLote(r.falhas);
     await Promise.all(['admin','parametros','parametro','historico'].map(k=>cache.invalidateQueries({queryKey:[k]})));
   }});
@@ -82,8 +89,20 @@ export default function PaginaRevisao() {
     {query.isPending ? <Carregando/> : dados && <>
       <div className="flex flex-wrap justify-between items-center gap-3 mb-3 text-sm">
         <span className="text-suave">{dados.total} resultado(s) — página {pagina+1}</span>
-        <button className="botao fantasma" type="button" disabled={lote.isPending||!selecionados.length}
-          onClick={()=>lote.mutate()}><CheckSquare size={16} aria-hidden/>{lote.isPending?'Aplicando…':`Marcar revisados (${selecionados.length})`}</button>
+        <div className="flex flex-wrap gap-2 items-center">
+          <select aria-label="Ação em lote" value={acaoLote} onChange={e=>setAcaoLote(e.target.value as 'status'|'tag')}>
+            <option value="status">Alterar status</option><option value="tag">Adicionar tag</option>
+          </select>
+          {acaoLote==='status' ?
+            <select aria-label="Status desejado" value={statusAlvo} onChange={e=>setStatusAlvo(e.target.value as StatusDocumentacao)}>
+              <option value="pendente">Pendente</option><option value="documentado">Documentado</option><option value="revisado">Revisado</option>
+            </select> :
+            <select aria-label="Tag desejada" value={tagAlvo} onChange={e=>setTagAlvo(e.target.value)}>
+              <option value="">Escolha uma tag</option>{(consultaTags.data??[]).map(tag=><option key={tag.id} value={tag.id}>{tag.nome}</option>)}
+            </select>}
+          <button className="botao fantasma" type="button" disabled={lote.isPending||!selecionados.length||(acaoLote==='tag'&&!tagAlvo)}
+            onClick={()=>lote.mutate()}><CheckSquare size={16} aria-hidden/>{lote.isPending?'Aplicando…':`Aplicar (${selecionados.length})`}</button>
+        </div>
       </div>
       <div className="border border-linha rounded-xl overflow-hidden">
         <div className="p-3 border-b border-linha bg-elevada">
