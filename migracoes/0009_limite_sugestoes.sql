@@ -10,7 +10,7 @@ revoke all on public.limites_sugestoes from public, anon, authenticated;
 
 create or replace function public.consumir_limite_sugestao(p_chave text)
 returns boolean
-language plpgsql security definer set search_path = ''
+language plpgsql security invoker set search_path = ''
 as $$
 declare
   total integer;
@@ -31,3 +31,6 @@ begin
 end $$;
 revoke all on function public.consumir_limite_sugestao(text) from public, anon, authenticated;
 grant execute on function public.consumir_limite_sugestao(text) to service_role;
+
+grant usage on schema public to service_role;
+grant select, insert, update on public.limites_sugestoes to service_role;
