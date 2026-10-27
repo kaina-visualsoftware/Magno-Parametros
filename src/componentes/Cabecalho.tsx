@@ -26,17 +26,9 @@ export function Cabecalho() {
       <nav id="menu-principal" aria-label="Navegação principal" className={cn('items-center gap-1 w-full md:w-auto md:flex', aberto ? 'flex flex-wrap' : 'hidden')}>
         {[['/', 'Catálogo'], ['/tags', 'Tags'], ...(papel === 'administrador' ? [['/novo','Novo parâmetro'], ['/abas','Abas'], ['/importar','Importar']] : [])].map(([rota,nome]) =>
           <NavLink key={rota} to={rota} end className={({ isActive }) => cn('rounded-lg px-3 py-2.5 text-sm !text-suave hover:bg-elevada', isActive && 'bg-elevada !text-tinta')} onClick={() => setAberto(false)}>{nome}</NavLink>)}
+        <button type="button" className="botao-icone" title="Reportar problema ou sugerir parâmetro" onClick={() => { setReportarAberto(true); setAberto(false); }}><Bug size={17} aria-hidden /><span className="text-sm hidden sm:inline">Reportar</span></button>
         {usuario ? (
           <>
-            <button
-              type="button"
-              className="botao-icone"
-              title="Reportar problema ou sugerir parâmetro"
-              onClick={() => setReportarAberto(true)}
-            >
-              <Bug size={17} aria-hidden />
-              <span className="text-sm hidden sm:inline">Reportar</span>
-            </button>
             <button
               className="botao-icone"
               title={usuario.email}
