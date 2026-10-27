@@ -12,7 +12,7 @@ export function ReportarProblema({ fechar, usuario }: ReportarProblemaProps) {
   const [descricao, setDescricao] = useState('');
   const [urlParametro, setUrlParametro] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     const titulo = urlParametro
@@ -77,9 +77,7 @@ export function ReportarProblema({ fechar, usuario }: ReportarProblemaProps) {
             disabled={!descricao.trim()}
             className="botao"
           >
-            <>
-                <Bug size={16} aria-hidden />Enviar para GitHub Issues
-</>
+            <><Bug size={16} aria-hidden /> Abrir issue no GitHub</>
           </button>
         </div>
       </form>
