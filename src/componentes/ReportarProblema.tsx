@@ -105,9 +105,9 @@ export function ReportarProblema({ fechar }: ReportarProblemaProps) {
           {falhouEnvio && <p className="dica">Seu texto foi preservado. Você pode concluir o envio pelo GitHub.</p>}
           <div className="flex justify-end gap-2 mt-2">
             <button type="button" className="botao fantasma" onClick={fechar} disabled={enviando}>Cancelar</button>
-            {<button type="submit" disabled={enviando || descricao.trim().length < 10} className="botao">
+            <button type="submit" disabled={enviando || descricao.trim().length < 10} className="botao">
               <Bug size={16} aria-hidden /> {enviando ? 'Enviando…' : 'Enviar sugestão'}
-            </button>}
+            </button>
             {falhouEnvio && <a
               className="botao"
               href={construirUrlIssue(descricao, parametro)}
