@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, Pencil } from 'lucide-react';
+import { ArrowLeft, Pencil, PenLine } from 'lucide-react';
 import { useDialogos } from '../componentes/Dialogo';
 import { Migalhas } from '../componentes/Migalhas';
 import { EditorTags } from '../componentes/EditorTags';
@@ -41,6 +41,7 @@ export default function PaginaParametro() {
     enabled: Boolean(id),
   });
   const [historicoAberto, setHistoricoAberto] = useState(false);
+  const [edicaoAtiva, setEdicaoAtiva] = useState(false);
   const vinculos = useQuery({ queryKey: ['parametro-tags', id], queryFn: () => obterTagsParametro(id!), enabled: Boolean(id) });
   const catalogoTags = useQuery({ queryKey: ['tags'], queryFn: listarTags, enabled: podeEditar, staleTime: 300_000 });
   const consultaHistorico = useQuery({ queryKey: ['historico', usuario?.id, id], queryFn: () => obterHistoricoParametro(id!), enabled: Boolean(id && usuario && historicoAberto) });
@@ -69,6 +70,7 @@ export default function PaginaParametro() {
   useEffect(() => {
     setMensagem('');
     setErro('');
+    setEdicaoAtiva(false);
   }, [id]);
 
   useEffect(() => {
@@ -93,6 +95,7 @@ export default function PaginaParametro() {
       if (rascunho.current.id !== parametro.id) return;
       carregarFormulario(parametro);
       setMensagem('Documentação salva.');
+      setEdicaoAtiva(false);
       setErro('');
       await consulta.invalidateQueries({ queryKey: ['parametro', id] });
       await consulta.invalidateQueries({ queryKey: ['parametros'] });
@@ -162,7 +165,17 @@ export default function PaginaParametro() {
 
       {erro && <p className="erro" role="alert">{erro}</p>}
 
-      <ImagemParametro parametro={parametro} admin={admin} />
+      {admin && <div className="flex flex-wrap items-center gap-3 mb-6">
+        <button type="button" className={edicaoAtiva?'botao fantasma':'botao'} aria-pressed={edicaoAtiva}
+          onClick={async () => {
+            if (edicaoAtiva && rascunho.current.alterado) {
+              if (!await confirmar('Sair do modo de edição? As alterações não salvas permanecerão no formulário até recarregar a página.')) return;
+            }
+            setEdicaoAtiva(!edicaoAtiva);
+          }}><PenLine size={17} aria-hidden/>{edicaoAtiva?'Concluir edição':'Editar parâmetro'}</button>
+        {edicaoAtiva && <span className="text-sm text-suave">Você está no modo de edição. Salve cada seção separadamente.</span>}
+      </div>}
+      <ImagemParametro parametro={parametro} admin={admin && edicaoAtiva} />
 
       <div className="grade-detalhe">
         <section className="cartao">
@@ -171,11 +184,11 @@ export default function PaginaParametro() {
           </h2>
           <dl className="definicoes">
             <dt>Tipo</dt>
-            <dd>{parametro.tipo}{admin && <button type="button" className="botao-icone pequeno" disabled={editarOrigem.isPending} title="Editar tipo" aria-label="Editar tipo" onClick={() => pedirEdicaoDeOrigem('tipo', parametro.tipo)}><Pencil size={16} aria-hidden /></button>}</dd>
+            <dd>{parametro.tipo}{admin && edicaoAtiva && <button type="button" className="botao-icone pequeno" disabled={editarOrigem.isPending} title="Editar tipo" aria-label="Editar tipo" onClick={() => pedirEdicaoDeOrigem('tipo', parametro.tipo)}><Pencil size={16} aria-hidden /></button>}</dd>
             <dt>Grupo</dt>
             <dd>
               {parametro.grupo}
-              {admin && (
+              {admin && edicaoAtiva && (
                 <button
                   type="button"
                   className="botao-icone pequeno"
@@ -224,7 +237,7 @@ export default function PaginaParametro() {
         <section className="cartao">
           <h2>Documentação</h2>
           {!parametro.oQueFaz && parametro.descricaoOriginal && <p className="dica">A descrição inicial abaixo foi importada do arquivo de origem. Ao salvar, ela passará a integrar a documentação editável.</p>}
-          <fieldset disabled={!podeEditar || salvar.isPending} style={{ border: 0, padding: 0, margin: 0 }}
+          <fieldset disabled={!podeEditar || (admin && !edicaoAtiva) || salvar.isPending} style={{ border: 0, padding: 0, margin: 0 }}
             onChange={() => { rascunho.current.alterado = true; setMensagem(''); }}>
           <label className="campo">
             <span>O que faz</span>
@@ -281,7 +294,7 @@ export default function PaginaParametro() {
             </select>
           </label>
           </fieldset>
-          {podeEditar ? (
+          {podeEditar && (!admin || edicaoAtiva) ? (
             <><button
               type="button"
               className="botao primario"
@@ -370,7 +383,7 @@ export default function PaginaParametro() {
         </section>
       </div>
 
-      {admin && parametro.ativo && (
+      {admin && edicaoAtiva && parametro.ativo && (
         <div className="zona-perigo">
           <button
             type="button"
