@@ -8,6 +8,7 @@ import { RelatorioImportacao } from '../aplicacao/caso-uso-importar';
 import { ConteudoFlat } from '../dominio/mapeador-arquivo';
 import urlOrigem from '../../dados/origem/parametros_myc_flat.json?url';
 import { useDialogos } from '../componentes/Dialogo';
+import { registrarImportacao } from '../servicos/administracao';
 
 /**
  * Importação com pré-visualização (dry-run) antes de confirmar.
@@ -24,6 +25,7 @@ export default function PaginaImportacao() {
   const [nomeArquivo, setNomeArquivo] = useState('');
   const [relatorio, setRelatorio] = useState<RelatorioImportacao | null>(null);
   const [erro, setErro] = useState('');
+  const [avisoHistorico, setAvisoHistorico] = useState('');
   const referenciaArquivo = useRef<HTMLInputElement>(null);
 
   const executar = useMutation({
@@ -38,6 +40,11 @@ export default function PaginaImportacao() {
       return importarCatalogoAtual(dados, { dryRun, usuario: usuario?.email ?? null });
     },
     onSuccess: async (resultado) => {
+      setAvisoHistorico('');
+      if (!resultado.dryRun) {
+        try { await registrarImportacao(resultado); }
+        catch { setAvisoHistorico('Importação executada, mas o registro do histórico falhou. Salve o relatório desta tela.'); }
+      }
       setRelatorio(resultado);
       setErro('');
       if (!resultado.dryRun) await Promise.all(['parametros','parametro','arvore','abas','telas','tipos','historico'].map(chave => consulta.invalidateQueries({ queryKey: [chave] })));
@@ -80,6 +87,8 @@ export default function PaginaImportacao() {
       </p>
 
       {erro && <p className="erro">{erro}</p>}
+      {avisoHistorico && <p role="alert" className="erro">{avisoHistorico}</p>}
+      <Link className="text-sm" to="/admin/historico">Consultar histórico de importações</Link>
 
       <form
         className="cartao"
