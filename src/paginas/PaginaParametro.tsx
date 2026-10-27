@@ -28,15 +28,8 @@ export default function PaginaParametro() {
   const local = useLocation();
   const retorno = typeof local.state?.voltar === 'string' && /^\/(?:\?|busca|tag\/|$)/.test(local.state.voltar) ? local.state.voltar : '/';
   const { id } = useParams<{ id: string }>();
-const { usuario, papel } = useAutenticacao();
+  const { usuario, papel } = useAutenticacao();
   const podeEditar = podeEditarDocumentacao(papel);
-
-  // Se o usuário está logado mas ainda não temos o papel (a consulta ao profile pode estar em andamento),
-  // exibimos um aviso de carregamento ao invés de desabilitar tudo silenciosamente.
-  if (usuario && papel === null) {
-    return <Carregando />;
-  }
-
 
   const admin = ehAdministrador(papel);
   const consulta = useQueryClient();
@@ -64,7 +57,7 @@ const { usuario, papel } = useAutenticacao();
   const rascunho = useRef({ id, alterado: false });
 
   function carregarFormulario(parametro: Parametro) {
-    setOQueFaz(parametro.oQueFaz ?? '');
+    setOQueFaz(parametro.oQueFaz ?? parametro.descricaoOriginal ?? '');
     setImpacto(parametro.impacto ?? '');
     setValorPadrao(parametro.valorPadrao ?? '');
     setObservacoes(parametro.observacoes ?? '');
@@ -113,16 +106,21 @@ const { usuario, papel } = useAutenticacao();
   });
 
   const editarOrigem = useMutation({
-    mutationFn: async (entrada: { campo: 'nome' | 'grupo' | 'descricaoOriginal'; valor: string }) =>
+    mutationFn: async (entrada: { campo: 'nome' | 'grupo' | 'descricaoOriginal' | 'tipo' | 'opcoes'; valor: string | string[] }) =>
       editarCampoOrigem({ id: id as string, ...entrada, usuario: usuario?.email ?? null }),
     onSuccess: async () => {
+      setErro('');
+      setMensagem('Dados de origem atualizados.');
       await consulta.invalidateQueries({ queryKey: ['parametro', id] });
       await consulta.invalidateQueries({ queryKey: ['arvore'] });
       await consulta.invalidateQueries({ queryKey: ['parametros'] });
+      await consulta.invalidateQueries({ queryKey: ['historico'] });
+      await consulta.invalidateQueries({ queryKey: ['tipos'] });
     },
     onError: (causa) => setErro(causa instanceof Error ? causa.message : String(causa)),
   });
 
+  if (usuario && papel === null) return <Carregando />;
   if (consultaDetalhe.isLoading) return <Carregando />;
   if (consultaDetalhe.error) return <ErroCarregamento erro={consultaDetalhe.error} />;
   if (!consultaDetalhe.data) return <Vazio mensagem="Parâmetro não encontrado." />;
@@ -132,14 +130,15 @@ const { usuario, papel } = useAutenticacao();
   const todasTags = podeEditar ? catalogoTags.data ?? [] : [];
   const historico = usuario ? consultaHistorico.data ?? [] : [];
 
-  async function pedirEdicaoDeOrigem(campo: 'nome' | 'grupo' | 'descricaoOriginal', valorAtual: string | null) {
+  async function pedirEdicaoDeOrigem(campo: 'nome' | 'grupo' | 'descricaoOriginal' | 'tipo' | 'opcoes', valorAtual: string | null) {
     const valor = await perguntar(
       `Editar o campo de origem "${campo}".\n\nAtenção: este campo veio do arquivo importado. ` +
         'Ao editá-lo, a próxima importação NÃO sobrescreverá este parâmetro (ficará como conflito para revisão).',
       valorAtual ?? '',
     );
     if (valor === null || valor === (valorAtual ?? '')) return;
-    editarOrigem.mutate({ campo, valor });
+    const valorFormatado = campo === 'opcoes' ? valor.split('\n').map(opcao => opcao.trim()).filter(Boolean) : valor;
+    editarOrigem.mutate({ campo, valor: valorFormatado });
   }
 
   return (
@@ -184,9 +183,11 @@ const { usuario, papel } = useAutenticacao();
       <div className="grade-detalhe">
         <section className="cartao">
           <h2>
-            Dados de origem <span className="dica block font-normal">Somente leitura — campos vindos do arquivo importado.</span>
+            Dados de origem <span className="dica block font-normal">Campos importados; administradores podem ajustar os valores (ajustes criam conflitos na reimportação).</span>
           </h2>
           <dl className="definicoes">
+            <dt>Tipo</dt>
+            <dd>{parametro.tipo}{admin && <button type="button" className="botao-icone pequeno" disabled={editarOrigem.isPending} title="Editar tipo" aria-label="Editar tipo" onClick={() => pedirEdicaoDeOrigem('tipo', parametro.tipo)}><Pencil size={16} aria-hidden /></button>}</dd>
             <dt>Grupo</dt>
             <dd>
               {parametro.grupo}
@@ -196,6 +197,7 @@ const { usuario, papel } = useAutenticacao();
                   className="botao-icone pequeno"
                   title="Editar grupo (campo de origem)"
                   aria-label="Editar grupo (campo de origem)"
+                  disabled={editarOrigem.isPending}
                   onClick={() => pedirEdicaoDeOrigem('grupo', parametro.grupo)}
                 >
                   <Pencil size={16} aria-hidden />
@@ -211,6 +213,7 @@ const { usuario, papel } = useAutenticacao();
                   className="botao-icone pequeno"
                   title="Editar descrição original (campo de origem)"
                   aria-label="Editar descrição original (campo de origem)"
+                  disabled={editarOrigem.isPending}
                   onClick={() => pedirEdicaoDeOrigem('descricaoOriginal', parametro.descricaoOriginal)}
                 >
                   <Pencil size={16} aria-hidden />
@@ -218,7 +221,7 @@ const { usuario, papel } = useAutenticacao();
               )}
             </dd>
             <dt>Opções</dt>
-            <dd>{parametro.opcoes.length > 0 ? parametro.opcoes.join(' · ') : '—'}</dd>
+            <dd>{parametro.opcoes.length > 0 ? parametro.opcoes.join(' · ') : '—'}{admin && <button type="button" className="botao-icone pequeno" disabled={editarOrigem.isPending} title="Editar opções" aria-label="Editar opções" onClick={() => pedirEdicaoDeOrigem('opcoes', parametro.opcoes.join('\n'))}><Pencil size={16} aria-hidden /></button>}</dd>
             <dt>Identificador</dt>
             <dd className="texto-mono">{parametro.id}</dd>
           </dl>
@@ -226,6 +229,7 @@ const { usuario, papel } = useAutenticacao();
             <button
               type="button"
               className="botao fantasma"
+              disabled={editarOrigem.isPending}
               onClick={() => pedirEdicaoDeOrigem('nome', parametro.nome)}
             >
               Renomear parâmetro (campo de origem)
@@ -235,6 +239,7 @@ const { usuario, papel } = useAutenticacao();
 
         <section className="cartao">
           <h2>Documentação</h2>
+          {!parametro.oQueFaz && parametro.descricaoOriginal && <p className="dica">A descrição inicial abaixo foi importada do arquivo de origem. Ao salvar, ela passará a integrar a documentação editável.</p>}
           <fieldset disabled={!podeEditar || salvar.isPending} style={{ border: 0, padding: 0, margin: 0 }}
             onChange={() => { rascunho.current.alterado = true; setMensagem(''); }}>
           <label className="campo">
