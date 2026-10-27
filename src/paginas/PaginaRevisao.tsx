@@ -17,7 +17,7 @@ const tipos: {valor: TipoFila; nome: string}[] = [
   {valor:'todos',nome:'Todos'},
 ];
 export default function PaginaRevisao() {
-  const { papel, carregando } = useAutenticacao();
+  const { usuario, papel, carregando } = useAutenticacao();
   const { confirmar } = useDialogos();
   const cache = useQueryClient();
   const [url, setUrl] = useSearchParams();
@@ -59,7 +59,7 @@ export default function PaginaRevisao() {
     setErrosLote(r.falhas);
     await Promise.all(['admin','parametros','parametro','historico'].map(k=>cache.invalidateQueries({queryKey:[k]})));
   }});
-  if (carregando || papel===null) return <Carregando/>;
+  if (carregando || (usuario && papel===null)) return <Carregando/>;
   if (!ehAdministrador(papel)) return <p className="erro">Acesso restrito. <Link to="/entrar">Entrar</Link></p>;
   const dados = query.data;
   const visiveis=dados?.itens.map(x=>x.id)??[];
