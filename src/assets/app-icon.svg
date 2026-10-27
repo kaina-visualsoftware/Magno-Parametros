@@ -1,1 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="titulo descricao">
+  <title id="titulo">Catálogo de parâmetros MyCommerce</title>
+  <desc id="descricao">Documento de configurações com lista e controles de ajuste</desc>
+  <rect width="64" height="64" rx="15" fill="#101c2b"/>
+  <path d="M12 12a5 5 0 0 1 5-5h25l10 10v28a5 5 0 0 1-5 5H17a5 5 0 0 1-5-5Z" fill="#edf5f8"/>
+  <path d="M42 7v8a3 3 0 0 0 3 3h7Z" fill="#b3d6e1"/>
+  <g stroke="#6a8290" stroke-width="3" stroke-linecap="round">
+    <path d="M25 25h16M25 34h12M25 43h10"/>
+  </g>
+  <g fill="#138c78">
+    <rect x="18" y="22" width="4.5" height="5" rx="1.5"/>
+    <rect x="18" y="31" width="4.5" height="5" rx="1.5"/>
+    <rect x="18" y="40" width="4.5" height="5" rx="1.5"/>
+  </g>
+  <circle cx="46" cy="45" r="15" fill="#101c2b"/>
+  <circle cx="46" cy="45" r="12" fill="#6cd7bb"/>
+  <g stroke="#103d37" stroke-width="2.8" stroke-linecap="round">
+    <path d="M38 40h16M38 45h16M38 50h16"/>
+  </g>
+  <g fill="#103d37" stroke="#6cd7bb" stroke-width="1.5">
+    <circle cx="44" cy="40" r="3.4"/>
+    <circle cx="50" cy="45" r="3.4"/>
+    <circle cx="42" cy="50" r="3.4"/>
+  </g>
+</svg>
