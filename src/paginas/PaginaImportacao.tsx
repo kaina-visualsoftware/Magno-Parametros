@@ -9,6 +9,7 @@ import { ConteudoFlat } from '../dominio/mapeador-arquivo';
 import urlOrigem from '../../dados/origem/parametros_myc_flat.json?url';
 import { useDialogos } from '../componentes/Dialogo';
 import { registrarImportacao } from '../servicos/administracao';
+import { baixarArquivo } from '../servicos/catalogo';
 
 /**
  * Importação com pré-visualização (dry-run) antes de confirmar.
@@ -26,6 +27,8 @@ export default function PaginaImportacao() {
   const [relatorio, setRelatorio] = useState<RelatorioImportacao | null>(null);
   const [erro, setErro] = useState('');
   const [avisoHistorico, setAvisoHistorico] = useState('');
+  const [previsaoConfirmada, setPrevisaoConfirmada] = useState(false);
+  const [origemPrevia, setOrigemPrevia] = useState('');
   const referenciaArquivo = useRef<HTMLInputElement>(null);
 
   const executar = useMutation({
@@ -37,9 +40,16 @@ export default function PaginaImportacao() {
         dados = await resposta.json() as ConteudoFlat;
       }
       if (!dados || !Array.isArray(dados.parametros)) throw new Error('Selecione um arquivo de origem válido.');
-      return importarCatalogoAtual(dados, { dryRun, usuario: usuario?.email ?? null });
+      const identificador = JSON.stringify(dados);
+      if (!dryRun && (!previsaoConfirmada || origemPrevia !== identificador)) {
+        throw new Error('Execute primeiro a pré-visualização desta versão do arquivo antes de gravar.');
+      }
+      const relatorio = await importarCatalogoAtual(dados, { dryRun, usuario: usuario?.email ?? null });
+      if (dryRun) { setOrigemPrevia(identificador); setPrevisaoConfirmada(true); }
+      return relatorio;
     },
     onSuccess: async (resultado) => {
+      if (!resultado.dryRun) {setPrevisaoConfirmada(false);setOrigemPrevia('');}
       setAvisoHistorico('');
       if (!resultado.dryRun) {
         try { await registrarImportacao(resultado); }
@@ -59,10 +69,12 @@ export default function PaginaImportacao() {
       const dados = JSON.parse(await arquivo.text()) as ConteudoFlat;
       if (!Array.isArray(dados.parametros)) throw new Error('estrutura inesperada');
       setConteudoEnviado(dados);
+      setPrevisaoConfirmada(false);
       setNomeArquivo(arquivo.name);
       setErro('');
     } catch {
       setConteudoEnviado(null);
+      setPrevisaoConfirmada(false);
       setNomeArquivo('');
       setErro('Arquivo JSON inválido (esperado o formato de parametros_myc_flat.json).');
     }
@@ -105,7 +117,7 @@ export default function PaginaImportacao() {
               type="radio"
               name="fonte"
               checked={!usarArquivoEnviado}
-              onChange={() => setUsarArquivoEnviado(false)}
+              onChange={() => {setUsarArquivoEnviado(false);setPrevisaoConfirmada(false);}}
             />
             Arquivo de origem embutido (dados/origem/parametros_myc_flat.json)
           </label>
@@ -114,7 +126,7 @@ export default function PaginaImportacao() {
               type="radio"
               name="fonte"
               checked={usarArquivoEnviado}
-              onChange={() => setUsarArquivoEnviado(true)}
+              onChange={() => {setUsarArquivoEnviado(true);setPrevisaoConfirmada(false);}}
             />
             Enviar outro arquivo JSON plano
           </label>
@@ -136,7 +148,8 @@ export default function PaginaImportacao() {
           Pré-visualização (dry-run) — calcula o relatório sem gravar nada
         </label>
 
-        <button type="submit" className="botao primario" disabled={executar.isPending || (usarArquivoEnviado && !conteudoEnviado)}>
+        {!dryRun && !previsaoConfirmada && <p className="text-sm text-suave">Faça uma pré-visualização primeiro para liberar a gravação.</p>}
+        <button type="submit" className="botao primario" disabled={executar.isPending || (usarArquivoEnviado && !conteudoEnviado) || (!dryRun && !previsaoConfirmada)}>
           {executar.isPending ? 'Processando…' : dryRun ? 'Pré-visualizar importação' : 'Executar importação'}
         </button>
       </form>
@@ -146,6 +159,7 @@ export default function PaginaImportacao() {
           <h2>
             Relatório {relatorio.dryRun ? '(pré-visualização — nada foi gravado)' : '(executado)'}
           </h2>
+          <button type="button" className="botao fantasma mb-4" onClick={()=>baixarArquivo('relatorio-importacao.json',JSON.stringify(relatorio,null,2),'application/json')}>Baixar relatório JSON</button>
           <dl className="grade-totais">
             <div>
               <dt>Parâmetros lidos</dt>
