@@ -111,6 +111,13 @@ export default function PaginaRevisao() {
         {dados.itens.map(p=><div key={p.id} className="flex gap-3 p-4 border-b border-linha last:border-0 hover:bg-superficie">
           <input type="checkbox" aria-label={`Selecionar ${p.nome}`} checked={selecionados.includes(p.id)}
             onChange={e=>setSelecionados(atual=>e.target.checked?[...atual,p.id]:atual.filter(x=>x!==p.id))}/>
+          {tipo==='ocr' && <div className="w-24 h-16 sm:w-32 sm:h-20 border border-linha rounded-lg bg-elevada overflow-hidden shrink-0">
+            <img className="w-full h-full object-contain" loading="lazy" alt={`Recorte importado do parâmetro ${p.nome}`}
+              src={`${import.meta.env.BASE_URL}imagens-parametro/${encodeURIComponent(p.id)}.png`}/>
+          </div>}
+          {tipo==='sem-imagem' && <div className="hidden sm:flex w-20 h-16 border border-linha rounded-lg bg-elevada items-center justify-center shrink-0">
+            <Image size={22} aria-label="Sem imagem" className="text-suave"/>
+          </div>}
           <div className="min-w-0 flex-1">
             <Link className="font-semibold" to={`/parametro/${encodeURIComponent(p.id)}`}>{p.nome}</Link>
             <p className="text-xs text-suave break-words !mb-1">{p.caminho}</p>
