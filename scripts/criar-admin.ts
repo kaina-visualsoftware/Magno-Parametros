@@ -1,108 +1,46 @@
+/**
+ * Promove uma conta existente a administrador usando credenciais de servidor.
+ * Nunca publique chaves service_role no frontend nem armazene senhas no código.
+ *
+ * ADMIN_USER_ID=<uuid> SUPABASE_URL=<url> SUPABASE_SERVICE_ROLE_KEY=<segredo> npm run criar-admin
+ */
 import { createClient } from '@supabase/supabase-js';
-import * as path from 'path';
+import * as path from 'node:path';
 import dotenv from 'dotenv';
 
-// Load .env and .env.local (if present) so VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are available
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local'), override: true });
 
-const EMAIL = 'admin@spamok.com';
-const PASSWORD = 'd9o67@rD8';
+async function main(): Promise<void> {
+  const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const userId = process.env.ADMIN_USER_ID;
 
-async function main() {
-  const url = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL;
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
-  const serviceKey =
-    process.env.VITE_SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !anonKey) {
-    console.error('⚠️  VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are required.');
-    process.exit(1);
+  if (!url || !serviceKey || !userId) {
+    throw new Error('Defina SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY e ADMIN_USER_ID no ambiente de execução.');
+  }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
+    throw new Error('ADMIN_USER_ID deve ser um UUID válido do Supabase Auth.');
   }
 
-  // Anonymous client (for regular Auth) and admin client (service_role) to bypass RLS when needed
-  const supabaseAnon = createClient(url, anonKey);
-  const supabaseAdmin = serviceKey ? createClient(url, serviceKey) : null;
+  const client = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data: usuario, error: erroUsuario } = await client.auth.admin.getUserById(userId);
+  if (erroUsuario || !usuario.user) throw new Error('Usuário não encontrado no Supabase Auth.');
 
-  // ---------------------------------------------------------------
-  // 1️⃣ Try to sign in – if the user exists we only need to ensure the role.
-  // ---------------------------------------------------------------
-  const { error: signInErr } = await supabaseAnon.auth.signInWithPassword({
-    email: EMAIL,
-    password: PASSWORD,
-  });
+  // Não utilizar ignoreDuplicates: true: isso impede promover perfis existentes.
+  const { error } = await client.from('profiles')
+    .upsert({ id: userId, papel: 'administrador' }, { onConflict: 'id' });
+  if (error) throw new Error('Não foi possível atualizar o papel: ' + error.message);
 
-  if (!signInErr) {
-    const { data } = await supabaseAnon.auth.getUser();
-    if (data?.user?.id) await upsertAdminProfile(supabaseAdmin, data.user.id);
-    console.log('✅ Admin user already existed and was authenticated.');
-    process.exit(0);
+  const { data: perfil, error: erroLeitura } = await client.from('profiles')
+    .select('papel').eq('id', userId).single();
+  if (erroLeitura || perfil?.papel !== 'administrador') {
+    throw new Error('Não foi possível confirmar a promoção do usuário.');
   }
-
-  // ---------------------------------------------------------------
-  // 2️⃣ Create the user. Prefer the Admin API (service_role) to avoid rate limits.
-  // ---------------------------------------------------------------
-  let userId: string | undefined;
-  if (supabaseAdmin && (supabaseAdmin as any).auth?.admin) {
-    const { data: adminUser, error: adminErr } = await (supabaseAdmin as any).auth.admin.createUser({
-      email: EMAIL,
-      password: PASSWORD,
-      email_confirm: true,
-    });
-    if (adminErr) {
-      console.error('❌ Failed to create admin user via Admin API:', adminErr.message);
-      process.exit(1);
-    }
-    userId = adminUser?.user?.id;
-  } else {
-    const { data: signUp, error: signUpErr } = await supabaseAnon.auth.signUp({
-      email: EMAIL,
-      password: PASSWORD,
-    });
-    if (signUpErr) {
-      console.error('❌ Failed to create admin user via sign‑up:', signUpErr.message);
-      process.exit(1);
-    }
-    userId = signUp?.user?.id;
-  }
-
-  if (!userId) {
-    console.error('❌ Could not obtain ID of newly created admin user.');
-    process.exit(1);
-  }
-
-  await upsertAdminProfile(supabaseAdmin, userId);
-  console.log('✅ Admin user created and marked as administrator.');
+  console.log('Perfil confirmado como administrador.');
 }
 
-/**
- * Upsert (insert or update) the `profiles` row with papel = 'administrador'.
- * Uses the service_role client to bypass RLS policies.
- */
-async function upsertAdminProfile(
-  adminClient: any,
-  userId: string
-) {
-  // Use provided admin client if available; otherwise create a client with anon credentials.
-  const client = adminClient ?? createClient(
-    process.env.VITE_SUPABASE_URL!,
-    process.env.VITE_SUPABASE_ANON_KEY!
-  );
-
-  const { error } = await client
-    .from('profiles')
-    .upsert({ id: userId, papel: 'administrador' }, { ignoreDuplicates: true });
-
-  if (error) {
-    console.error('❌ Error upserting admin profile:', error.message);
-    process.exit(1);
-  }
-}
-
-// ---------------------------------------------------------------
-// Execute
-// ---------------------------------------------------------------
-main().catch((e) => {
-  console.error('❌ Unexpected exception:', e);
-  process.exit(1);
+main().catch((erro: unknown) => {
+  console.error(erro instanceof Error ? erro.message : String(erro));
+  process.exitCode = 1;
 });
