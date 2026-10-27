@@ -13,18 +13,13 @@ interface RespostaSugestao {
   error?: string;
 }
 
-function urlApi(): string | null {
-  const configurada = import.meta.env.VITE_ISSUES_API_URL as string | undefined;
-  const base = configurada || import.meta.env.VITE_SUPABASE_URL as string | undefined;
-  if (!base) return null;
-  try {
-    const url = new URL(base);
-    // Não envie sugestões para o endpoint do Supabase: só o Worker possui o token.
-    if (url.protocol !== 'https:' || url.hostname.endsWith('.supabase.co')) return null;
-    return new URL('/api/sugestoes', url).toString();
-  } catch {
-    return null;
-  }
+// A função está no Supabase do catálogo; não depende de Worker ou variável extra.
+function urlApi(): string {
+  const supabase = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const host = supabase?.startsWith('https://') && new URL(supabase).hostname.endsWith('.supabase.co')
+    ? new URL(supabase).origin
+    : 'https://dmgmalzqywrjecvzbkjy.supabase.co';
+  return `${host}/functions/v1/criar-sugestao`;
 }
 
 export function construirUrlIssue(descricao: string, parametro: string): string {
@@ -51,7 +46,6 @@ export function ReportarProblema({ fechar }: ReportarProblemaProps) {
   const [erro, setErro] = useState('');
   const [issue, setIssue] = useState('');
   const [falhouEnvio, setFalhouEnvio] = useState(false);
-  const configurado = Boolean(urlApi());
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,11 +53,6 @@ export function ReportarProblema({ fechar }: ReportarProblemaProps) {
     setErro('');
     setFalhouEnvio(false);
     const endpoint = urlApi();
-    if (!endpoint) {
-      setFalhouEnvio(true);
-      setErro('O envio automático ainda não está configurado. Use a opção de abrir no GitHub abaixo.');
-      return;
-    }
     setEnviando(true);
     try {
       const resposta = await fetch(endpoint, {
@@ -96,9 +85,7 @@ export function ReportarProblema({ fechar }: ReportarProblemaProps) {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <p className="dica">{configurado
-            ? 'Envie correções ou sugestões diretamente, sem precisar de uma conta no GitHub.'
-            : 'Descreva sua sugestão e abra uma issue já preenchida no GitHub. É necessário entrar no GitHub para publicar.'}</p>
+          <p className="dica">Envie correções ou sugestões diretamente, sem precisar de uma conta no GitHub. Se o serviço estiver indisponível, será possível abrir no GitHub.</p>
           <label className="campo">
             <span>Descrição do problema ou sugestão *</span>
             <textarea required minLength={10} maxLength={4000} rows={4}
@@ -118,10 +105,10 @@ export function ReportarProblema({ fechar }: ReportarProblemaProps) {
           {falhouEnvio && <p className="dica">Seu texto foi preservado. Você pode concluir o envio pelo GitHub.</p>}
           <div className="flex justify-end gap-2 mt-2">
             <button type="button" className="botao fantasma" onClick={fechar} disabled={enviando}>Cancelar</button>
-            {configurado && <button type="submit" disabled={enviando || descricao.trim().length < 10} className="botao">
+            <button type="submit" disabled={enviando || descricao.trim().length < 10} className="botao">
               <Bug size={16} aria-hidden /> {enviando ? 'Enviando…' : 'Enviar sugestão'}
-            </button>}
-            {(!configurado || falhouEnvio) && <a
+            </button>
+            {falhouEnvio && <a
               className="botao"
               href={construirUrlIssue(descricao, parametro)}
               target="_blank"
