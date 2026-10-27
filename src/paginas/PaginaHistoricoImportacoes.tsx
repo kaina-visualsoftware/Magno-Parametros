@@ -5,9 +5,9 @@ import { ehAdministrador, useAutenticacao } from '../aplicacao/autenticacao';
 import { listarImportacoes } from '../servicos/administracao';
 
 export default function PaginaHistoricoImportacoes() {
-  const {papel,carregando}=useAutenticacao();
+  const {usuario,papel,carregando}=useAutenticacao();
   const consulta=useQuery({queryKey:['admin','importacoes'],queryFn:listarImportacoes,enabled:ehAdministrador(papel)});
-  if (carregando || papel===null) return <Carregando/>;
+  if (carregando || (usuario && papel===null)) return <Carregando/>;
   if (!ehAdministrador(papel)) return <p className="erro">Acesso restrito a administradores. <Link to="/entrar">Entrar</Link></p>;
   return <section>
     <Link to="/admin" className="text-sm">Voltar ao painel</Link>
