@@ -15,9 +15,9 @@ const acoes = [
   { rota: '/admin/historico', titulo: 'Histórico de importações', descricao: 'Registros e relatórios desta sessão', Icone: History },
 ];
 export default function PaginaAdmin() {
-  const { papel, carregando } = useAutenticacao();
+  const { usuario, papel, carregando } = useAutenticacao();
   const indicadores = useQuery({queryKey:['admin','contagens'],queryFn:contarPendencias,enabled:ehAdministrador(papel),staleTime:60_000});
-  if (carregando || papel === null) return <Carregando />;
+  if (carregando || (usuario && papel === null)) return <Carregando />;
   if (!ehAdministrador(papel)) return <div className="erro" role="alert">Acesso restrito a administradores. <Link to="/entrar">Entrar</Link></div>;
   const resumo = indicadores.data;
   return <section className="admin-pagina" aria-labelledby="admin-titulo">
