@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bug } from 'lucide-react';
+import { Bug, ExternalLink } from 'lucide-react';
 import { Dialogo } from './Dialogo';
 
 interface ReportarProblemaProps {
@@ -27,6 +27,22 @@ function urlApi(): string | null {
   }
 }
 
+export function construirUrlIssue(descricao: string, parametro: string): string {
+  const url = new URL('https://github.com/kaina-visualsoftware/Myc.config/issues/new');
+  url.searchParams.set('title', parametro.trim()
+    ? `Sugestão de parâmetro: ${parametro.trim().slice(0, 110)}`
+    : 'Sugestão de parâmetro ou correção');
+  url.searchParams.set('body', [
+    '## Descrição',
+    descricao.trim(),
+    parametro.trim() ? `**Referência do parâmetro:** ${parametro.trim()}` : '',
+    '',
+    '---',
+    'Enviado pelo catálogo público de parâmetros do MyCommerce.',
+  ].filter(Boolean).join('\\n'));
+  return url.toString();
+}
+
 export function ReportarProblema({ fechar }: ReportarProblemaProps) {
   const [descricao, setDescricao] = useState('');
   const [parametro, setParametro] = useState('');
@@ -34,14 +50,18 @@ export function ReportarProblema({ fechar }: ReportarProblemaProps) {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
   const [issue, setIssue] = useState('');
+  const [falhouEnvio, setFalhouEnvio] = useState(false);
+  const configurado = Boolean(urlApi());
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (enviando) return;
     setErro('');
+    setFalhouEnvio(false);
     const endpoint = urlApi();
     if (!endpoint) {
-      setErro('Envio automático ainda não configurado. Contate a administração do catálogo.');
+      setFalhouEnvio(true);
+      setErro('O envio automático ainda não está configurado. Use a opção de abrir no GitHub abaixo.');
       return;
     }
     setEnviando(true);
@@ -59,6 +79,7 @@ export function ReportarProblema({ fechar }: ReportarProblemaProps) {
       setDescricao('');
       setParametro('');
     } catch (causa) {
+      setFalhouEnvio(true);
       setErro(causa instanceof Error ? causa.message : 'Falha de conexão. Tente novamente.');
     } finally {
       setEnviando(false);
@@ -75,7 +96,9 @@ export function ReportarProblema({ fechar }: ReportarProblemaProps) {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <p className="dica">Envie correções ou sugestões diretamente, sem precisar de uma conta no GitHub.</p>
+          <p className="dica">{configurado
+            ? 'Envie correções ou sugestões diretamente, sem precisar de uma conta no GitHub.'
+            : 'Descreva sua sugestão e abra uma issue já preenchida no GitHub. É necessário entrar no GitHub para publicar.'}</p>
           <label className="campo">
             <span>Descrição do problema ou sugestão *</span>
             <textarea required minLength={10} maxLength={4000} rows={4}
@@ -92,11 +115,21 @@ export function ReportarProblema({ fechar }: ReportarProblemaProps) {
             <input tabIndex={-1} autoComplete="off" value={site} onChange={e => setSite(e.target.value)} />
           </label>
           {erro && <p className="erro" role="alert">{erro}</p>}
+          {falhouEnvio && <p className="dica">Seu texto foi preservado. Você pode concluir o envio pelo GitHub.</p>}
           <div className="flex justify-end gap-2 mt-2">
             <button type="button" className="botao fantasma" onClick={fechar} disabled={enviando}>Cancelar</button>
-            <button type="submit" disabled={enviando || descricao.trim().length < 10} className="botao">
+            {configurado && <button type="submit" disabled={enviando || descricao.trim().length < 10} className="botao">
               <Bug size={16} aria-hidden /> {enviando ? 'Enviando…' : 'Enviar sugestão'}
-            </button>
+            </button>}
+            {(!configurado || falhouEnvio) && <a
+              className="botao"
+              href={construirUrlIssue(descricao, parametro)}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-disabled={descricao.trim().length < 10}
+              onClick={evento => { if (descricao.trim().length < 10) evento.preventDefault(); }}>
+              <ExternalLink size={16} aria-hidden /> Abrir no GitHub
+            </a>}
           </div>
         </form>
       )}
