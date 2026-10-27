@@ -6,7 +6,8 @@ import { ehAdministrador, useAutenticacao } from '../aplicacao/autenticacao';
 import { useDialogos } from '../componentes/Dialogo';
 import { Carregando, ErroCarregamento } from '../componentes/Estado';
 import { listarFilaAdministrativa, type TipoFila } from '../servicos/administracao';
-import { obterParametro, salvarDocumentacao, listarTags, aplicarTag } from '../servicos/catalogo';
+import { obterParametro, salvarDocumentacao, listarTags, aplicarTag, baixarArquivo } from '../servicos/catalogo';
+import { planejarLoteStatus, relatorioLoteCsv } from '../dominio/lote-admin';
 import type { StatusDocumentacao } from '../dominio/entidades';
 
 const tipos: {valor: TipoFila; nome: string}[] = [
@@ -25,6 +26,7 @@ export default function PaginaRevisao() {
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [resultadoLote, setResultadoLote] = useState('');
   const [errosLote, setErrosLote] = useState<string[]>([]);
+  const [ultimoLote, setUltimoLote] = useState<Array<{id:string;acao:string;resultado:'sucesso'|'ignorado'|'falha';mensagem:string}>>([]);
   const [acaoLote, setAcaoLote] = useState<'status'|'tag'>('status');
   const [statusAlvo, setStatusAlvo] = useState<StatusDocumentacao>('revisado');
   const [tagAlvo, setTagAlvo] = useState('');
@@ -34,30 +36,52 @@ export default function PaginaRevisao() {
   const pesquisa = (url.get('q') ?? '').slice(0,100);
   const query = useQuery({queryKey:['admin','fila',tipo,pagina,pesquisa],queryFn:()=>listarFilaAdministrativa(tipo,pagina,pesquisa),enabled:ehAdministrador(papel)});
   const lote = useMutation({mutationFn: async () => {
-    if (!selecionados.length) return {ok:0, falhas:[] as string[]};
+    const ids=[...new Set(selecionados)].slice(0,25);
+    if (!ids.length) return [] as Array<{id:string;acao:string;resultado:'sucesso'|'ignorado'|'falha';mensagem:string}>;
     if (acaoLote==='tag' && !tagAlvo) throw new Error('Escolha uma tag antes de aplicar.');
-    if (!await confirmar(`Aplicar ${acaoLote==='tag'?'a tag selecionada':`status ${statusAlvo}`} a ${selecionados.length} parâmetros? As alterações serão registradas no histórico quando suportado pelo serviço.`))
-      return {ok:0,falhas:[] as string[]};
-    let ok=0;
-    const falhas:string[]=[];
-    for(const id of selecionados) {
+    const registro: Array<{id:string;acao:string;resultado:'sucesso'|'ignorado'|'falha';mensagem:string}>=[];
+    const validos: Array<NonNullable<Awaited<ReturnType<typeof obterParametro>>>> = [];
+    for(const id of ids) {
       try {
         const p=await obterParametro(id);
-        if (!p) throw new Error('Parâmetro não encontrado');
-        if (acaoLote==='tag') await aplicarTag(p.id,tagAlvo);
-        else await salvarDocumentacao({
-          id:p.id,versaoEsperada:p.versao,oQueFaz:p.oQueFaz,
-          impacto:p.impacto,valorPadrao:p.valorPadrao,observacoes:p.observacoes,
-          statusDocumentacao:statusAlvo,
-        });
-        ok++;
-      } catch(e) {falhas.push(`${id}: ${e instanceof Error ? e.message : 'Erro de gravação'}`);}
+        if (!p || !p.ativo) throw new Error('Parâmetro não encontrado ou inativo');
+        validos.push(p);
+      } catch(e) {
+        registro.push({id,acao:acaoLote,resultado:'falha',mensagem:e instanceof Error?e.message:String(e)});
+      }
     }
-    return {ok,falhas};
-  }, onSuccess: async r=>{
-    setSelecionados([]);setResultadoLote(`${r.ok} parâmetro(s) atualizado(s).`);
-    setErrosLote(r.falhas);
-    await Promise.all(['admin','parametros','parametro','historico'].map(k=>cache.invalidateQueries({queryKey:[k]})));
+    const planejamento=acaoLote==='status' ? planejarLoteStatus(validos.map(p=>({
+      id:p.id,nome:p.nome,statusDocumentacao:p.statusDocumentacao,versao:p.versao,
+    })),statusAlvo) : null;
+    const ignorados=new Set(planejamento?.ignorar.map(p=>p.id)??[]);
+    const executar=validos.filter(p=>!ignorados.has(p.id));
+    const mensagem=acaoLote==='status'
+      ? `Alterar o status de ${executar.length} parâmetro(s) para "${statusAlvo}"? ${ignorados.size} já estão nesse status e serão ignorados. ${registro.length} falharam na verificação inicial.`
+      : `Adicionar a tag selecionada a ${executar.length} parâmetro(s)? ${registro.length} falharam na verificação inicial.`;
+    if(!await confirmar(`${mensagem} A operação é sequencial e não pode ser desfeita em bloco.`)) return [];
+    for(const id of ignorados) registro.push({id,acao:acaoLote,resultado:'ignorado',mensagem:'Já está no status escolhido'});
+    for(const p of executar){
+      try {
+        if(acaoLote==='tag') await aplicarTag(p.id,tagAlvo);
+        else await salvarDocumentacao({
+          id:p.id,versaoEsperada:p.versao,oQueFaz:p.oQueFaz,impacto:p.impacto,
+          valorPadrao:p.valorPadrao,observacoes:p.observacoes,statusDocumentacao:statusAlvo,
+        });
+        registro.push({id:p.id,acao:acaoLote,resultado:'sucesso',mensagem:'Atualizado'});
+      } catch(e){
+        registro.push({id:p.id,acao:acaoLote,resultado:'falha',mensagem:e instanceof Error?e.message:String(e)});
+      }
+    }
+    return registro;
+  }, onSuccess: async resultados=>{
+    if(!resultados.length) return;
+    setUltimoLote(resultados);
+    setSelecionados([]);
+    const ok=resultados.filter(x=>x.resultado==='sucesso').length;
+    const ignorados=resultados.filter(x=>x.resultado==='ignorado').length;
+    setResultadoLote(`${ok} atualizados, ${ignorados} ignorados e ${resultados.filter(x=>x.resultado==='falha').length} falhas.`);
+    setErrosLote(resultados.filter(x=>x.resultado==='falha').map(x=>`${x.id}: ${x.mensagem}`));
+    await Promise.all(['admin','parametros','parametro','historico','tags'].map(k=>cache.invalidateQueries({queryKey:[k]})));
   }});
   if (carregando || (usuario && papel===null)) return <Carregando/>;
   if (!ehAdministrador(papel)) return <p className="erro">Acesso restrito. <Link to="/entrar">Entrar</Link></p>;
@@ -83,6 +107,8 @@ export default function PaginaRevisao() {
       {pesquisa && <button className="botao-icone" type="button" onClick={()=>{setBusca('');setUrl({tipo});}} aria-label="Limpar busca"><X size={17}/></button>}
     </form>
     {resultadoLote && <p role="status" className="mensagem-sucesso">{resultadoLote}</p>}
+    {ultimoLote.length>0 && <button type="button" className="botao fantasma mb-4"
+      onClick={()=>baixarArquivo('resultado-lote.csv',relatorioLoteCsv(ultimoLote),'text/csv;charset=utf-8')}>Baixar resultado do lote (CSV)</button>
     {errosLote.length>0 && <div className="erro" role="alert"><strong>Itens não atualizados:</strong><ul>{errosLote.map(x=><li key={x}>{x}</li>)}</ul></div>}
     {lote.error && <p className="erro" role="alert">{lote.error.message}</p>}
     {query.error && <ErroCarregamento erro={query.error} aoTentarNovamente={()=>void query.refetch()}/>}
