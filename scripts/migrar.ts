@@ -27,7 +27,7 @@ async function principal(): Promise<void> {
 
   const cliente = new Client({
     connectionString: url,
-    ssl: { rejectUnauthorized: false },
+    ssl: { rejectUnauthorized: true },
   });
   await cliente.connect();
 
