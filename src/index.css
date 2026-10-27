@@ -243,3 +243,44 @@ body {
 .admin-acao:focus-visible { outline:2px solid var(--acento); }
 .admin-pagina .cartao { min-width:0; }
 @media(max-width:640px){.admin-acao {padding:16px;} }
+
+/* Detalhes compactos — estilos isolados para preservar o restante do catálogo. */
+.pagina-parametro .migalhas { margin-bottom: .65rem; }
+.pagina-parametro .trilha { row-gap: .25rem; }
+.pagina-parametro .cabecalho-parametro { margin-bottom: 1rem; }
+.pagina-parametro .cabecalho-parametro h1 { margin-bottom: .5rem; font-size: clamp(1.55rem, 2.35vw, 2.15rem); line-height: 1.2; }
+.pagina-parametro .etiquetas { gap: .45rem .85rem; }
+.detalhe-compacto-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: .9rem; align-items: start; }
+.detalhe-principal, .detalhe-lateral { display: grid; align-content: start; gap: .9rem; min-width: 0; }
+.pagina-parametro .detalhe-compacto-grid .cartao { padding: 1rem 1.125rem; margin: 0; min-width: 0; }
+.pagina-parametro .detalhe-compacto-grid h2 { font-size: 1.05rem; margin-bottom: .7rem; }
+.detalhe-leitura { display: grid; gap: .85rem; margin: 0; }
+.detalhe-leitura > div { min-width: 0; }
+.detalhe-leitura dt { color: var(--suave); font-size: .78rem; font-weight: 600; margin-bottom: .15rem; }
+.detalhe-leitura dd { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; font-size: .9rem; }
+.detalhe-recolhivel { border: 1px solid var(--linha); border-radius: .75rem; background: var(--superficie); min-width: 0; }
+.detalhe-recolhivel > summary { padding: .7rem 1rem; color: var(--tinta); font-weight: 600; display: list-item; }
+.detalhe-recolhivel[open] > summary { border-bottom: 1px solid var(--linha); }
+.pagina-parametro .detalhe-recolhivel .cartao { border: 0; border-radius: 0 0 .75rem .75rem; padding: .85rem 1rem; }
+.pagina-parametro .detalhe-recolhivel .cartao h2 { display: none; }
+.detalhe-tecnico .definicoes { display: grid; grid-template-columns: minmax(0, 115px) minmax(0, 1fr); gap: .4rem .7rem; margin: 0 0 .75rem; }
+.detalhe-tecnico .definicoes dt { margin: 0; font-size: .78rem; }
+.detalhe-tecnico .definicoes dd { margin: 0; }
+.detalhe-lateral .cartao-imagem { margin: 0; }
+.detalhe-lateral .imagem-destacada { display: block; width: auto; max-width: 100%; max-height: 210px; object-fit: contain; }
+.detalhe-lateral .cartao .dica { margin-bottom: .5rem; }
+.detalhe-lateral .cartao .flex { max-width: 100%; }
+.detalhe-documentacao .campo { margin-bottom: .85rem; }
+.detalhe-documentacao .campo > span { margin-bottom: .3rem; }
+.detalhe-documentacao textarea { min-height: 72px; }
+.detalhe-historico { margin-top: .9rem; padding: .8rem 1rem; }
+.detalhe-historico details > summary { font-size: .9rem; }
+.detalhe-tags .chips { margin-bottom: .4rem; }
+@media (min-width: 920px) {
+  .detalhe-compacto-grid { grid-template-columns: minmax(0, 1.65fr) minmax(285px, 1fr); gap: 1rem; }
+}
+@media (max-width: 639px) {
+  .pagina-parametro .detalhe-compacto-grid .cartao { padding: .9rem; }
+  .detalhe-tecnico .definicoes { grid-template-columns: minmax(0, 95px) minmax(0, 1fr); }
+  .detalhe-lateral .imagem-destacada { max-height: 185px; }
+}
